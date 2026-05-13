@@ -37,6 +37,12 @@ a {
   text-decoration: none;
 }
 
+button.secondary,
+a.secondary {
+  background: #fffefa;
+  color: #17201b;
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
@@ -76,7 +82,7 @@ label {
   display: flex;
   gap: 24px;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .eyebrow {
@@ -114,6 +120,70 @@ h3 {
   flex-wrap: wrap;
   gap: 10px;
   justify-content: flex-end;
+}
+
+.topActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.hero,
+.walletPanel {
+  background: #fffefa;
+  border: 1px solid #d7d1c2;
+  border-radius: 8px;
+  margin-bottom: 18px;
+  padding: 18px;
+}
+
+.hero {
+  display: grid;
+  gap: 12px;
+}
+
+.hero p {
+  font-size: 16px;
+  line-height: 1.6;
+  max-width: 880px;
+}
+
+.heroMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.heroMeta span {
+  background: #e4eee5;
+  border: 1px solid #b6c9ba;
+  border-radius: 999px;
+  color: #2e6248;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 7px 10px;
+}
+
+.muted,
+.walletPanel p {
+  color: #666861;
+}
+
+.walletPanel {
+  align-items: center;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.walletPanel h2 {
+  margin-bottom: 8px;
+}
+
+.walletPanel p + p {
+  margin-top: 6px;
 }
 
 .wallet span {
@@ -172,6 +242,28 @@ h3 {
 .invoice p,
 .memo {
   color: #666861;
+}
+
+.faucetStatus {
+  border-radius: 6px;
+  font-weight: 700;
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+}
+
+.faucetStatus.pending {
+  background: #fff4d6;
+  color: #765414;
+}
+
+.faucetStatus.success {
+  background: #e4eee5;
+  color: #2f7d51;
+}
+
+.faucetStatus.error {
+  background: #f9e2df;
+  color: #9b3d35;
 }
 
 .invoiceList {
@@ -245,12 +337,14 @@ h3 {
   }
 
   .topbar,
+  .walletPanel,
   .grid {
     display: grid;
     grid-template-columns: 1fr;
   }
 
-  .wallet {
+  .wallet,
+  .topActions {
     justify-content: start;
   }
 

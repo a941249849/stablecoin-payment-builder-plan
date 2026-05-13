@@ -1,6 +1,6 @@
 # Tempo StablePay
 
-Tempo StablePay is a small testnet payment workflow for invoice-style stablecoin transfers on Tempo.
+Tempo StablePay is a testnet payment workflow for invoice-style stablecoin transfers on Tempo.
 
 The v1 demo targets Tempo Testnet (Moderato) and uses TIP-20 memo transfers:
 
@@ -9,6 +9,8 @@ The v1 demo targets Tempo Testnet (Moderato) and uses TIP-20 memo transfers:
 - transfer primitive: `transferWithMemo(address,uint256,bytes32)`
 - reconciliation event: `TransferWithMemo`
 - invoice storage: browser local storage
+- wallet access: Tempo Wallet, plus injected wallets such as OKX Wallet and MetaMask when available
+- faucet access: official Tempo faucet link, with an in-app request path for connected wallets
 
 ## Development
 

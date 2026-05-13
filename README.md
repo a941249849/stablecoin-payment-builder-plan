@@ -1,21 +1,30 @@
-# Stablecoin Payment Infrastructure Research
+# Tempo StablePay
 
-This repository tracks a builder-oriented research and implementation plan for stablecoin payment infrastructure, with an initial focus on Tempo and a follow-up comparison track for Arc.
+Tempo StablePay is an engineering workspace for building and validating a stablecoin payment workflow on Tempo Testnet.
+
+The first demo focuses on a practical payment loop:
+
+1. Create a local invoice.
+2. Encode the invoice reference as a TIP-20 `bytes32` memo.
+3. Send an AlphaUSD `transferWithMemo`.
+4. Reconcile payment status from the `TransferWithMemo` event.
+
+This repository is used to keep the build reproducible through GitHub and Vercel. Broader market or protocol comparisons should be treated as separate research notes, not as the purpose of the app itself.
 
 Start with:
 
-- [Tempo and Arc Stablecoin Payment Builder Plan](docs/tempo-arc-builder-plan.md)
 - [Tempo Build Gate](docs/tempo-build-gate.md)
 - [Vercel Deployment](docs/vercel-deployment.md)
 - [Tempo StablePay App](apps/tempo-stablepay/README.md)
+- [Planning Notes](docs/tempo-arc-builder-plan.md)
 
-Primary near-term focus:
+Current engineering focus:
 
-1. Deploy the Tempo StablePay preview through Vercel.
-2. Validate a self-paid AlphaUSD memo transfer on Tempo Testnet.
-3. Confirm `TransferWithMemo` reconciliation from the live transaction.
-4. Use Arc's current attention window for a comparable USDC checkout research/demo track.
-5. Publish a Tempo vs Arc comparison based on real implementation evidence.
+1. Keep the Vercel deployment green.
+2. Validate wallet connection across Tempo Wallet, OKX Wallet, and MetaMask where available.
+3. Validate faucet funding on Tempo Testnet.
+4. Send a self-paid AlphaUSD memo transfer.
+5. Confirm `TransferWithMemo` reconciliation from the live transaction.
 
 Public repo principles:
 

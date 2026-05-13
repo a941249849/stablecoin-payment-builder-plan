@@ -1,5 +1,5 @@
 import { createConfig, http } from 'wagmi'
-import { injected } from 'wagmi/connectors'
+import { injected, metaMask, tempoWallet } from 'wagmi/connectors'
 import { tempoModerato } from 'viem/chains'
 
 export const tokens = {
@@ -27,10 +27,14 @@ export const paymentToken = tokens.alphaUsd
 export const feeTokens = [tokens.pathUsd, tokens.alphaUsd, tokens.betaUsd]
 
 export const explorerBaseUrl = 'https://explore.testnet.tempo.xyz'
+export const faucetUrl = 'https://docs.tempo.xyz/quickstart/faucet'
+export const faucetApiUrl = 'https://docs.tempo.xyz/api/faucet'
+export const docsUrl = 'https://docs.tempo.xyz'
 
 export const config = createConfig({
   chains: [tempoModerato.extend({ feeToken: paymentToken.address })],
-  connectors: [injected()],
+  connectors: [tempoWallet({ testnet: true }), metaMask(), injected()],
+  multiInjectedProviderDiscovery: true,
   transports: {
     [tempoModerato.id]: http('https://rpc.moderato.tempo.xyz'),
   },
