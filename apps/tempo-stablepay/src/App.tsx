@@ -19,7 +19,7 @@ import { PaymentNetwork } from './PaymentNetwork'
 import {
   defaultPaymentToken,
   docsUrl,
-  explorerReceiptUrl,
+  explorerTransactionUrl,
   faucetApiUrl,
   faucetUrl,
   feeTokens,
@@ -70,7 +70,7 @@ const copy = {
     empty: '还没有发票。',
     send: '发送',
     delete: '删除',
-    receipt: '凭证',
+    receipt: '交易详情',
     switch: '切换网络',
     switching: '正在请求钱包切换网络...',
     disconnect: '断开连接',
@@ -93,7 +93,7 @@ const copy = {
     wrongNetwork: '当前钱包不在 Tempo Testnet，请先切换网络。',
     balanceLoading: '读取中...',
     walletConfirm: '请在钱包中确认这笔测试网付款。',
-    paymentSent: '交易已提交，正在等待链上确认和 memo 对账。',
+    paymentSent: '交易已提交，正在等待链上确认和 memo 对账。若 explorer 短时间内未索引，请复制交易 hash 到 Tempo Explorer 搜索。',
     paymentError: '发送失败',
     policyTitle: '付款资格检查',
     policyIdle: '连接钱包并填写收款地址后，发送前会自动确认这笔测试网付款是否可以发起。',
@@ -142,7 +142,7 @@ const copy = {
     empty: 'No invoices yet.',
     send: 'Send',
     delete: 'Delete',
-    receipt: 'Receipt',
+    receipt: 'Transaction',
     switch: 'Switch network',
     switching: 'Requesting wallet network switch...',
     disconnect: 'Disconnect',
@@ -165,7 +165,8 @@ const copy = {
     wrongNetwork: 'The wallet is not on Tempo Testnet. Switch networks first.',
     balanceLoading: 'Loading...',
     walletConfirm: 'Confirm this testnet payment in your wallet.',
-    paymentSent: 'Transaction submitted. Waiting for onchain confirmation and memo reconciliation.',
+    paymentSent:
+      'Transaction submitted. Waiting for onchain confirmation and memo reconciliation. If the explorer has not indexed it yet, copy the transaction hash into Tempo Explorer search.',
     paymentError: 'Send failed',
     policyTitle: 'Payment eligibility check',
     policyIdle: 'Connect a wallet and enter a recipient. The app checks whether this testnet payment can be sent before opening the wallet.',
@@ -857,7 +858,7 @@ function InvoiceRow({
           {isConnected && !isTempoNetwork ? switchLabel : sendLabel}
         </button>
         {invoice.txHash ? (
-          <a href={explorerReceiptUrl(invoice.txHash)} target="_blank" rel="noreferrer">
+          <a href={explorerTransactionUrl(invoice.txHash)} target="_blank" rel="noreferrer">
             {receiptLabel}
           </a>
         ) : null}

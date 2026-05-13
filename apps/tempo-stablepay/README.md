@@ -46,4 +46,4 @@ apps/tempo-stablepay/dist
 - No custom contracts.
 - Fee sponsorship is not enabled until a live sponsored transaction is validated.
 - Tempo Wallet is the preferred send path. Injected wallets may connect or add Tempo Testnet, but transaction submission can still fail if the wallet/RPC path does not support Tempo stablecoin-fee transactions.
-- Explorer receipt links use `https://explore.tempo.xyz/receipt/{transactionHash}`.
+- Explorer transaction links use `https://explore.tempo.xyz/tx/{transactionHash}`. Tempo Explorer may expose a separate receipt view from the transaction page when it can decode one.
