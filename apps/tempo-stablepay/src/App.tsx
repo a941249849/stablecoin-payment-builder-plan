@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { formatUnits, isAddress, parseAbiItem, parseUnits, zeroAddress } from 'viem'
-import { useAccount, useConnect, useDisconnect, useReadContract, useSwitchChain, useWatchContractEvent } from 'wagmi'
+import { useAccount, useConnect, useDisconnect, useReadContracts, useSwitchChain, useWatchContractEvent } from 'wagmi'
 import { Hooks } from 'wagmi/tempo'
+import { Language } from './copy'
 import { createInvoice, Invoice, loadInvoices, saveInvoices } from './invoices'
 import { decodeMemo, encodeMemo } from './memo'
 import { PaymentNetwork } from './PaymentNetwork'
@@ -23,7 +24,6 @@ const transferWithMemoEvent = parseAbiItem(
 )
 const balanceOfAbi = [parseAbiItem('function balanceOf(address account) view returns (uint256)')]
 
-type Language = 'zh' | 'en'
 type FaucetStatus = 'idle' | 'pending' | 'success' | 'error'
 type ActionState = {
   tone: 'neutral' | 'success' | 'error'
@@ -50,9 +50,14 @@ const copy = {
     feeToken: '手续费代币',
     create: '创建发票',
     balance: '当前付款代币余额',
+    balances: '测试币余额',
+    refreshBalances: '刷新余额',
+    balanceIdle: '连接钱包后读取余额',
     payments: '支付记录',
+    clearInvalid: '清理无效发票',
     empty: '还没有发票。',
     send: '发送',
+    delete: '删除',
     receipt: '凭证',
     switch: '切换网络',
     switching: '正在请求钱包切换网络...',
@@ -71,6 +76,8 @@ const copy = {
     walletConfirm: '已提交发送请求，请在钱包中确认交易。',
     paymentSent: '交易已上链，等待 TransferWithMemo 事件对账。',
     paymentError: '发送失败',
+    policyError:
+      '发送失败：Tempo 的 TIP-20 转账会经过 TIP-403 授权检查。请确认收款地址不是零地址、优先使用当前钱包地址，并确认钱包已在 Tempo Testnet；如果仍返回 403，记录为测试网策略/RPC 拒绝证据。',
     switchSuccess: '已切换到 Tempo Testnet。',
     switchError: '网络切换失败，请在钱包中手动添加 Tempo Testnet。',
     invalidRecipient: '收款地址不可用。请使用有效地址，不能是 0x000...000。',
@@ -96,9 +103,14 @@ const copy = {
     feeToken: 'Fee token',
     create: 'Create invoice',
     balance: 'Selected payment token balance',
+    balances: 'Test token balances',
+    refreshBalances: 'Refresh balances',
+    balanceIdle: 'Connect wallet to read balances',
     payments: 'Payments',
+    clearInvalid: 'Clear invalid invoices',
     empty: 'No invoices yet.',
     send: 'Send',
+    delete: 'Delete',
     receipt: 'Receipt',
     switch: 'Switch network',
     switching: 'Requesting wallet network switch...',
@@ -117,6 +129,8 @@ const copy = {
     walletConfirm: 'Send request submitted. Confirm the transaction in your wallet.',
     paymentSent: 'Transaction landed. Waiting for TransferWithMemo reconciliation.',
     paymentError: 'Send failed',
+    policyError:
+      'Send failed: Tempo TIP-20 transfers run through TIP-403 authorization checks. Use a valid non-zero recipient, prefer the connected wallet address, and confirm the wallet is on Tempo Testnet. If 403 persists, record it as testnet policy/RPC rejection evidence.',
     switchSuccess: 'Switched to Tempo Testnet.',
     switchError: 'Network switch failed. Add Tempo Testnet manually in the wallet.',
     invalidRecipient: 'Recipient is not usable. Use a valid non-zero address.',
@@ -127,7 +141,8 @@ const copy = {
 export function App() {
   const [language, setLanguage] = useState<Language>('zh')
   const [paymentTokenAddress, setPaymentTokenAddress] = useState<`0x${string}`>(defaultPaymentToken.address)
-  const [recipient, setRecipient] = useState<`0x${string}`>('0x0000000000000000000000000000000000000000')
+  const [recipient, setRecipient] = useState<string>(zeroAddress)
+  const [recipientTouched, setRecipientTouched] = useState(false)
   const [amount, setAmount] = useState('100')
   const [feeToken, setFeeToken] = useState<`0x${string}`>(defaultPaymentToken.address)
   const [invoices, setInvoices] = useState<Invoice[]>([])
@@ -154,31 +169,44 @@ export function App() {
     [invoices, selectedInvoiceId],
   )
   const selectedInvoiceToken = selectedInvoice ? findStableToken(selectedInvoice.token) : selectedPaymentToken
-  const balance = useReadContract({
-    address: selectedPaymentToken.address,
-    abi: balanceOfAbi,
-    functionName: 'balanceOf',
-    chainId: tempoChainId,
-    args: address ? [address] : undefined,
+  const balanceContracts = useMemo(
+    () =>
+      stableTokens.map((token) => ({
+        address: token.address,
+        abi: balanceOfAbi,
+        functionName: 'balanceOf',
+        args: [address ?? zeroAddress],
+        chainId: tempoChainId,
+      })),
+    [address],
+  )
+  const balances = useReadContracts({
+    contracts: balanceContracts,
     query: {
       enabled: Boolean(address),
-      refetchInterval: isConnected ? 4_000 : false,
-      staleTime: 0,
+      refetchOnWindowFocus: false,
+      staleTime: 30_000,
     },
   })
   const t = copy[language]
   const isTempoNetwork = chainId === tempoChainId
   const recipientIsValid = isUsableAddress(recipient)
+  const invalidInvoiceCount = invoices.filter((invoice) => !isUsableAddress(invoice.recipient)).length
+  const balanceByToken = useMemo(() => {
+    const entries = stableTokens.map((token, index) => {
+      const item = balances.data?.[index]
+      const value = item?.status === 'success' ? item.result : undefined
+      return [token.address.toLowerCase(), value] as const
+    })
+    return Object.fromEntries(entries) as Record<string, bigint | undefined>
+  }, [balances.data])
+  const selectedBalance = balanceByToken[selectedPaymentToken.address.toLowerCase()]
 
   useEffect(() => {
-    if (address) void balance.refetch()
-  }, [address, selectedPaymentToken.address])
-
-  useEffect(() => {
-    if (address && !isUsableAddress(recipient)) {
+    if (address && !recipientTouched && (!recipient || recipient === zeroAddress)) {
       setRecipient(address)
     }
-  }, [address, recipient])
+  }, [address, recipient, recipientTouched])
 
   useWatchContractEvent({
     address: selectedInvoiceToken.address,
@@ -211,7 +239,7 @@ export function App() {
           }
         }),
       )
-      void balance.refetch()
+      void balances.refetch()
       setActionState({ tone: 'success', text: t.paymentSent })
     },
   })
@@ -273,11 +301,11 @@ export function App() {
                 : item,
             ),
           )
-          void balance.refetch()
+          void balances.refetch()
           setActionState({ tone: 'success', text: t.paymentSent })
         },
         onError: (error) => {
-          setActionState({ tone: 'error', text: `${t.paymentError}: ${error.message}` })
+          setActionState({ tone: 'error', text: formatTransferError(error, t.paymentError, t.policyError) })
         },
       },
     )
@@ -312,10 +340,30 @@ export function App() {
 
       if (!response.ok) throw new Error(`Faucet returned ${response.status}`)
       setFaucetStatus('success')
-      await balance.refetch()
+      await balances.refetch()
     } catch {
       setFaucetStatus('error')
     }
+  }
+
+  function updateRecipient(value: string) {
+    setRecipientTouched(true)
+    setRecipient(value)
+  }
+
+  function useCurrentWalletAsRecipient() {
+    if (!address) return
+    setRecipientTouched(false)
+    setRecipient(address)
+  }
+
+  function deleteInvoice(id: string) {
+    setInvoices((current) => current.filter((invoice) => invoice.id !== id))
+    if (selectedInvoiceId === id) setSelectedInvoiceId(undefined)
+  }
+
+  function clearInvalidInvoices() {
+    setInvoices((current) => current.filter((invoice) => isUsableAddress(invoice.recipient)))
   }
 
   return (
@@ -341,6 +389,8 @@ export function App() {
 
         <section className="hero">
           <div className="heroCopy">
+            <p className="heroKicker">Stablecoin payment builder</p>
+            <h2>Run invoice settlement on Tempo testnet</h2>
             <p>{t.subtitle}</p>
             <div className="heroMeta">
               <span>TIP-20 memo</span>
@@ -350,7 +400,7 @@ export function App() {
             <p className="muted">{t.stack}</p>
             <p className="muted">{t.supportedWallets}</p>
           </div>
-          <PaymentNetwork />
+          <PaymentNetwork language={language} />
         </section>
 
         <section className="logicPanel">
@@ -432,8 +482,8 @@ export function App() {
               <label>
                 {t.recipient}
                 <div className="recipientControl">
-                  <input value={recipient} onChange={(event) => setRecipient(event.target.value as `0x${string}`)} />
-                  <button type="button" className="secondary" disabled={!address} onClick={() => address && setRecipient(address)}>
+                  <input value={recipient} onChange={(event) => updateRecipient(event.target.value)} />
+                  <button type="button" className="secondary" disabled={!address} onClick={useCurrentWalletAsRecipient}>
                     {t.useWallet}
                   </button>
                 </div>
@@ -461,13 +511,32 @@ export function App() {
             <div className="balance">
               <span>{t.balance}</span>
               <strong>
-                {balance.isFetching
-                  ? t.balanceLoading
-                  : balance.data === undefined
-                    ? '0.00'
-                    : formatUnits(balance.data, selectedPaymentToken.decimals)}{' '}
+                {selectedBalance === undefined ? '0.00' : formatUnits(selectedBalance, selectedPaymentToken.decimals)}{' '}
                 {selectedPaymentToken.symbol}
               </strong>
+            </div>
+            <div className="balancePanel">
+              <div className="balanceHeader">
+                <span>{t.balances}</span>
+                <button type="button" className="secondary" disabled={!address || balances.isFetching} onClick={() => void balances.refetch()}>
+                  {t.refreshBalances}
+                </button>
+              </div>
+              {address ? (
+                <div className="balanceGrid">
+                  {stableTokens.map((token) => {
+                    const value = balanceByToken[token.address.toLowerCase()]
+                    return (
+                      <div className={token.address === selectedPaymentToken.address ? 'tokenBalance active' : 'tokenBalance'} key={token.address}>
+                        <span>{token.symbol}</span>
+                        <strong>{value === undefined ? '0.00' : formatUnits(value, token.decimals)}</strong>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="fieldHint">{t.balanceIdle}</p>
+              )}
             </div>
             {isConnected && !isTempoNetwork ? <p className="fieldHint">{t.wrongNetwork}</p> : null}
           </section>
@@ -475,7 +544,14 @@ export function App() {
           <section className="panel wide">
             <div className="panelHeader">
               <h2>{t.payments}</h2>
-              <span>{invoices.length}</span>
+              <div className="panelActions">
+                {invalidInvoiceCount > 0 ? (
+                  <button type="button" className="secondary" onClick={clearInvalidInvoices}>
+                    {t.clearInvalid}
+                  </button>
+                ) : null}
+                <span>{invoices.length}</span>
+              </div>
             </div>
 
             <div className="invoiceList">
@@ -491,7 +567,9 @@ export function App() {
                   invalidLabel={t.invalidInvoice}
                   key={invoice.id}
                   onSelect={() => setSelectedInvoiceId(invoice.id)}
+                  onDelete={() => deleteInvoice(invoice.id)}
                   onSend={() => sendInvoice(invoice)}
+                  deleteLabel={t.delete}
                   receiptLabel={t.receipt}
                   sendLabel={t.send}
                 />
@@ -512,8 +590,10 @@ function InvoiceRow({
   isPending,
   isSwitching,
   invalidLabel,
+  onDelete,
   onSelect,
   onSend,
+  deleteLabel,
   receiptLabel,
   sendLabel,
 }: {
@@ -524,8 +604,10 @@ function InvoiceRow({
   isPending: boolean
   isSwitching: boolean
   invalidLabel: string
+  onDelete: () => void
   onSelect: () => void
   onSend: () => void
+  deleteLabel: string
   receiptLabel: string
   sendLabel: string
 }) {
@@ -546,6 +628,16 @@ function InvoiceRow({
       </div>
       <div className="memo">{decodeMemo(invoice.memo)}</div>
       <div className="actions">
+        <button
+          type="button"
+          className="secondary"
+          onClick={(event) => {
+            event.stopPropagation()
+            onDelete()
+          }}
+        >
+          {deleteLabel}
+        </button>
         <button
           type="button"
           disabled={!isConnected || isPending || isSwitching || !invoiceRecipientIsValid}
@@ -573,4 +665,9 @@ function shortAddress(value: string | undefined) {
 
 function isUsableAddress(value: string | undefined): value is `0x${string}` {
   return Boolean(value && isAddress(value) && value.toLowerCase() !== zeroAddress)
+}
+
+function formatTransferError(error: Error, fallback: string, policyError: string) {
+  if (/403|PolicyForbids|TIP-403|Non-200 status code/i.test(error.message)) return policyError
+  return `${fallback}: ${error.message}`
 }
