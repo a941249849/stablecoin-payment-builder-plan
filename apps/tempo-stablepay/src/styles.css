@@ -131,6 +131,7 @@ h3 {
 }
 
 .hero,
+.logicPanel,
 .walletPanel {
   background: #fffefa;
   border: 1px solid #d7d1c2;
@@ -140,14 +141,21 @@ h3 {
 }
 
 .hero {
+  align-items: stretch;
   display: grid;
   gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
 }
 
 .hero p {
   font-size: 16px;
   line-height: 1.6;
   max-width: 880px;
+}
+
+.heroCopy {
+  display: grid;
+  gap: 12px;
 }
 
 .heroMeta {
@@ -169,6 +177,112 @@ h3 {
 .muted,
 .walletPanel p {
   color: #666861;
+}
+
+.logicPanel {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(190px, 260px) minmax(0, 1fr);
+}
+
+.logicPanel p:last-child {
+  color: #53554f;
+  line-height: 1.65;
+}
+
+.paymentNetwork {
+  background:
+    linear-gradient(135deg, rgba(78, 138, 105, 0.16), rgba(28, 52, 77, 0.08)),
+    #101a17;
+  border: 1px solid #203b2f;
+  border-radius: 8px;
+  min-height: 220px;
+  overflow: hidden;
+  position: relative;
+}
+
+.networkBackdrop {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 34px 34px;
+  inset: 0;
+  mask-image: radial-gradient(circle at 50% 50%, #000 20%, transparent 78%);
+  opacity: 0.6;
+  position: absolute;
+}
+
+.networkRail {
+  background: linear-gradient(90deg, transparent, #68d391, #f4d06f, transparent);
+  height: 2px;
+  position: absolute;
+  transform-origin: left center;
+}
+
+.networkRail::after {
+  animation: railSweep 2.8s ease-in-out infinite;
+  animation-delay: inherit;
+  background: #f7fff5;
+  border-radius: 999px;
+  box-shadow: 0 0 16px #7ff0aa;
+  content: "";
+  height: 8px;
+  left: 0;
+  position: absolute;
+  top: -3px;
+  width: 8px;
+}
+
+.networkNode {
+  align-items: center;
+  animation: nodeFloat 3.8s ease-in-out infinite;
+  color: #ecfff3;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+.nodePulse {
+  background: #7ff0aa;
+  border: 2px solid #f8fff9;
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 6px rgba(127, 240, 170, 0.14),
+    0 0 24px rgba(127, 240, 170, 0.68);
+  height: 18px;
+  width: 18px;
+}
+
+.nodeLabel {
+  background: rgba(10, 22, 18, 0.82);
+  border: 1px solid rgba(127, 240, 170, 0.26);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 7px;
+  white-space: nowrap;
+}
+
+.networkPacket {
+  animation: packetMove 5s linear infinite;
+  background: #f4d06f;
+  border-radius: 999px;
+  box-shadow: 0 0 20px #f4d06f;
+  height: 10px;
+  left: 10%;
+  position: absolute;
+  top: 68%;
+  width: 10px;
+}
+
+.packetTwo {
+  animation-delay: 2.4s;
+  background: #77d8ff;
+  box-shadow: 0 0 20px #77d8ff;
+  top: 22%;
 }
 
 .walletPanel {
@@ -266,6 +380,38 @@ h3 {
   color: #9b3d35;
 }
 
+.actionState,
+.fieldHint {
+  border-radius: 6px;
+  font-weight: 700;
+  padding: 10px 12px;
+}
+
+.actionState {
+  grid-column: 1 / -1;
+}
+
+.actionState.neutral,
+.fieldHint {
+  background: #e8eef6;
+  color: #355170;
+}
+
+.actionState.success {
+  background: #e4eee5;
+  color: #2f7d51;
+}
+
+.actionState.error {
+  background: #f9e2df;
+  color: #9b3d35;
+}
+
+.fieldHint {
+  font-size: 13px;
+  margin-top: 12px;
+}
+
 .invoiceList {
   display: grid;
   gap: 10px;
@@ -337,6 +483,8 @@ h3 {
   }
 
   .topbar,
+  .hero,
+  .logicPanel,
   .walletPanel,
   .grid {
     display: grid;
@@ -354,5 +502,70 @@ h3 {
 
   .actions {
     justify-content: start;
+  }
+
+  .paymentNetwork {
+    min-height: 200px;
+  }
+}
+
+@keyframes railSweep {
+  0%,
+  20% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  78% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(2600%);
+    opacity: 0;
+  }
+}
+
+@keyframes nodeFloat {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translateY(0);
+  }
+
+  50% {
+    transform: translate(-50%, -50%) translateY(-6px);
+  }
+}
+
+@keyframes packetMove {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  35% {
+    transform: translate(105px, -48px);
+  }
+
+  58% {
+    transform: translate(215px, 4px);
+  }
+
+  82% {
+    transform: translate(320px, -38px);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(410px, -10px);
+    opacity: 0;
   }
 }

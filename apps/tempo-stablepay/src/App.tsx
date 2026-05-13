@@ -4,6 +4,7 @@ import { useAccount, useConnect, useDisconnect, useSwitchChain, useWatchContract
 import { Hooks } from 'wagmi/tempo'
 import { createInvoice, Invoice, loadInvoices, saveInvoices } from './invoices'
 import { decodeMemo, encodeMemo } from './memo'
+import { PaymentNetwork } from './PaymentNetwork'
 import {
   defaultPaymentToken,
   docsUrl,
@@ -13,6 +14,8 @@ import {
   feeTokens,
   findStableToken,
   stableTokens,
+  tempoChainId,
+  tempoSwitchParameter,
 } from './tempo'
 
 const transferWithMemoEvent = parseAbiItem(
@@ -21,6 +24,10 @@ const transferWithMemoEvent = parseAbiItem(
 
 type Language = 'zh' | 'en'
 type FaucetStatus = 'idle' | 'pending' | 'success' | 'error'
+type ActionState = {
+  tone: 'neutral' | 'success' | 'error'
+  text: string
+}
 
 const copy = {
   zh: {
@@ -30,6 +37,9 @@ const copy = {
       '一个用于验证 Tempo 稳定币支付工作流的测试网 demo：选择 pathUSD、AlphaUSD、BetaUSD 或 ThetaUSD 创建发票，写入 TIP-20 memo，并用 TransferWithMemo 事件完成对账。',
     stack: '基于 Vite、React、Wagmi、Viem 和 tempo.ts 构建。',
     supportedWallets: '连接入口覆盖 Tempo Wallet，并通过浏览器注入钱包支持 OKX Wallet、MetaMask 等可添加 Tempo 网络的钱包。',
+    designTitle: '从支付逻辑出发的链',
+    designBody:
+      'Tempo 的关键不是再做一个通用交易链，而是把稳定币支付需要的低成本、支付元数据、确定性结算和可赞助手续费放到第一层体验里。这个 demo 用发票、memo、事件监听和手续费代币选择去验证这条路径。',
     language: 'English',
     invoice: '发票',
     paymentToken: '付款代币',
@@ -43,6 +53,7 @@ const copy = {
     send: '发送',
     receipt: '凭证',
     switch: '切换网络',
+    switching: '正在请求钱包切换网络...',
     disconnect: '断开连接',
     faucet: '官方领水',
     docs: 'Tempo 文档',
@@ -53,6 +64,13 @@ const copy = {
     connectTitle: '连接钱包',
     connectHint: '如果你安装了 OKX Wallet 或 MetaMask，浏览器注入入口会显示对应钱包名称。',
     noWallet: '未检测到浏览器钱包时，可先使用 Tempo Wallet 或打开官方领水页面填写地址。',
+    wrongNetwork: '当前钱包不在 Tempo Testnet，请先切换网络。',
+    balanceLoading: '读取中...',
+    walletConfirm: '已提交发送请求，请在钱包中确认交易。',
+    paymentSent: '交易已上链，等待 TransferWithMemo 事件对账。',
+    paymentError: '发送失败',
+    switchSuccess: '已切换到 Tempo Testnet。',
+    switchError: '网络切换失败，请在钱包中手动添加 Tempo Testnet。',
   },
   en: {
     network: 'Tempo Testnet',
@@ -62,6 +80,9 @@ const copy = {
     stack: 'Built with Vite, React, Wagmi, Viem, and tempo.ts.',
     supportedWallets:
       'Wallet access includes Tempo Wallet plus injected wallets such as OKX Wallet and MetaMask when they support or can add the Tempo network.',
+    designTitle: 'A chain shaped around payment logic',
+    designBody:
+      'Tempo is not just another general trading chain. Its payment thesis is low cost, payment metadata, deterministic settlement, and fee sponsorship as first-layer UX. This demo validates that path through invoices, memos, event listeners, and fee-token selection.',
     language: '中文',
     invoice: 'Invoice',
     paymentToken: 'Payment token',
@@ -75,6 +96,7 @@ const copy = {
     send: 'Send',
     receipt: 'Receipt',
     switch: 'Switch network',
+    switching: 'Requesting wallet network switch...',
     disconnect: 'Disconnect',
     faucet: 'Official faucet',
     docs: 'Tempo docs',
@@ -85,6 +107,13 @@ const copy = {
     connectTitle: 'Connect wallet',
     connectHint: 'If OKX Wallet or MetaMask is installed, the injected wallet entry should show its wallet name.',
     noWallet: 'If no browser wallet is detected, use Tempo Wallet or open the official faucet page with an address.',
+    wrongNetwork: 'The wallet is not on Tempo Testnet. Switch networks first.',
+    balanceLoading: 'Loading...',
+    walletConfirm: 'Send request submitted. Confirm the transaction in your wallet.',
+    paymentSent: 'Transaction landed. Waiting for TransferWithMemo reconciliation.',
+    paymentError: 'Send failed',
+    switchSuccess: 'Switched to Tempo Testnet.',
+    switchError: 'Network switch failed. Add Tempo Testnet manually in the wallet.',
   },
 } as const
 
@@ -97,10 +126,11 @@ export function App() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>()
   const [faucetStatus, setFaucetStatus] = useState<FaucetStatus>('idle')
+  const [actionState, setActionState] = useState<ActionState>()
   const { address, chainId, isConnected } = useAccount()
   const { connectors, connect, isPending: isConnecting } = useConnect()
   const { disconnect } = useDisconnect()
-  const { switchChain } = useSwitchChain()
+  const { switchChainAsync, isPending: isSwitching } = useSwitchChain()
   const transfer = Hooks.token.useTransferSync()
   const selectedPaymentToken = findStableToken(paymentTokenAddress)
 
@@ -120,8 +150,17 @@ export function App() {
   const balance = Hooks.token.useGetBalance({
     account: address,
     token: selectedPaymentToken.address,
+    query: {
+      refetchInterval: isConnected ? 4_000 : false,
+      staleTime: 0,
+    },
   })
   const t = copy[language]
+  const isTempoNetwork = chainId === tempoChainId
+
+  useEffect(() => {
+    if (address) void balance.refetch()
+  }, [address, selectedPaymentToken.address])
 
   useWatchContractEvent({
     address: selectedInvoiceToken.address,
@@ -154,12 +193,15 @@ export function App() {
           }
         }),
       )
+      void balance.refetch()
+      setActionState({ tone: 'success', text: t.paymentSent })
     },
   })
 
   function addInvoice(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!isAddress(recipient)) return
+    if (!amount || Number(amount) <= 0) return
 
     const id = `INV-${Date.now().toString(36).toUpperCase()}`
     const invoice = createInvoice({
@@ -172,10 +214,18 @@ export function App() {
 
     setInvoices((current) => [invoice, ...current])
     setSelectedInvoiceId(invoice.id)
+    setActionState(undefined)
   }
 
   function sendInvoice(invoice: Invoice) {
+    if (!isConnected) return
+    if (!isTempoNetwork) {
+      void switchToTempo()
+      return
+    }
+
     const invoiceToken = findStableToken(invoice.token)
+    setActionState({ tone: 'neutral', text: t.walletConfirm })
 
     transfer.mutate(
       {
@@ -198,9 +248,29 @@ export function App() {
                 : item,
             ),
           )
+          void balance.refetch()
+          setActionState({ tone: 'success', text: t.paymentSent })
+        },
+        onError: (error) => {
+          setActionState({ tone: 'error', text: `${t.paymentError}: ${error.message}` })
         },
       },
     )
+  }
+
+  async function switchToTempo() {
+    setActionState({ tone: 'neutral', text: t.switching })
+
+    try {
+      await switchChainAsync({
+        chainId: tempoChainId,
+        addEthereumChainParameter: tempoSwitchParameter,
+      })
+      setActionState({ tone: 'success', text: t.switchSuccess })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t.switchError
+      setActionState({ tone: 'error', text: `${t.switchError} ${message}` })
+    }
   }
 
   async function requestFaucet() {
@@ -245,14 +315,25 @@ export function App() {
         </header>
 
         <section className="hero">
-          <p>{t.subtitle}</p>
-          <div className="heroMeta">
-            <span>TIP-20 memo</span>
-            <span>pathUSD / AlphaUSD / BetaUSD / ThetaUSD</span>
-            <span>TransferWithMemo</span>
+          <div className="heroCopy">
+            <p>{t.subtitle}</p>
+            <div className="heroMeta">
+              <span>TIP-20 memo</span>
+              <span>pathUSD / AlphaUSD / BetaUSD / ThetaUSD</span>
+              <span>TransferWithMemo</span>
+            </div>
+            <p className="muted">{t.stack}</p>
+            <p className="muted">{t.supportedWallets}</p>
           </div>
-          <p className="muted">{t.stack}</p>
-          <p className="muted">{t.supportedWallets}</p>
+          <PaymentNetwork />
+        </section>
+
+        <section className="logicPanel">
+          <div>
+            <p className="eyebrow">{t.network}</p>
+            <h2>{t.designTitle}</h2>
+          </div>
+          <p>{t.designBody}</p>
         </section>
 
         <section className="walletPanel">
@@ -265,9 +346,9 @@ export function App() {
             {isConnected ? (
               <>
                 <span>{shortAddress(address)}</span>
-                {chainId !== 42431 ? (
-                  <button type="button" onClick={() => switchChain({ chainId: 42431 })}>
-                    {t.switch}
+                {!isTempoNetwork ? (
+                  <button type="button" disabled={isSwitching} onClick={() => void switchToTempo()}>
+                    {isSwitching ? t.switching : t.switch}
                   </button>
                 ) : null}
                 <button type="button" onClick={() => disconnect()}>
@@ -299,6 +380,7 @@ export function App() {
                   : t.faucetError}
             </p>
           ) : null}
+          {actionState ? <p className={`actionState ${actionState.tone}`}>{actionState.text}</p> : null}
         </section>
 
         <div className="grid">
@@ -346,10 +428,15 @@ export function App() {
             <div className="balance">
               <span>{t.balance}</span>
               <strong>
-                {balance.data === undefined ? '0.00' : formatUnits(balance.data, selectedPaymentToken.decimals)}{' '}
+                {balance.isFetching
+                  ? t.balanceLoading
+                  : balance.data === undefined
+                    ? '0.00'
+                    : formatUnits(balance.data, selectedPaymentToken.decimals)}{' '}
                 {selectedPaymentToken.symbol}
               </strong>
             </div>
+            {isConnected && !isTempoNetwork ? <p className="fieldHint">{t.wrongNetwork}</p> : null}
           </section>
 
           <section className="panel wide">
@@ -365,7 +452,9 @@ export function App() {
                   invoice={invoice}
                   isActive={invoice.id === selectedInvoice?.id}
                   isConnected={isConnected}
+                  isTempoNetwork={isTempoNetwork}
                   isPending={transfer.isPending}
+                  isSwitching={isSwitching}
                   key={invoice.id}
                   onSelect={() => setSelectedInvoiceId(invoice.id)}
                   onSend={() => sendInvoice(invoice)}
@@ -385,7 +474,9 @@ function InvoiceRow({
   invoice,
   isActive,
   isConnected,
+  isTempoNetwork,
   isPending,
+  isSwitching,
   onSelect,
   onSend,
   receiptLabel,
@@ -394,7 +485,9 @@ function InvoiceRow({
   invoice: Invoice
   isActive: boolean
   isConnected: boolean
+  isTempoNetwork: boolean
   isPending: boolean
+  isSwitching: boolean
   onSelect: () => void
   onSend: () => void
   receiptLabel: string
@@ -418,13 +511,13 @@ function InvoiceRow({
       <div className="actions">
         <button
           type="button"
-          disabled={!isConnected || isPending}
+          disabled={!isConnected || isPending || isSwitching}
           onClick={(event) => {
             event.stopPropagation()
             onSend()
           }}
         >
-          {sendLabel}
+          {isConnected && !isTempoNetwork ? 'Switch' : sendLabel}
         </button>
         {invoice.txHash ? (
           <a href={`${explorerBaseUrl}/tx/${invoice.txHash}`} target="_blank" rel="noreferrer">

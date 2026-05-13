@@ -38,17 +38,29 @@ export function findStableToken(address: `0x${string}`) {
   return stableTokens.find((token) => token.address.toLowerCase() === address.toLowerCase()) ?? defaultPaymentToken
 }
 
-export const explorerBaseUrl = 'https://explore.testnet.tempo.xyz'
+export const tempoExplorerUrl = 'https://explore.tempo.xyz'
+export const explorerBaseUrl = tempoExplorerUrl
 export const faucetUrl = 'https://docs.tempo.xyz/quickstart/faucet'
 export const faucetApiUrl = 'https://docs.tempo.xyz/api/faucet'
 export const docsUrl = 'https://docs.tempo.xyz'
+export const tempoChainId = tempoModerato.id
+export const tempoRpcUrl = 'https://rpc.moderato.tempo.xyz'
+export const tempoSwitchParameter = {
+  nativeCurrency: {
+    decimals: 18,
+    name: 'USD',
+    symbol: 'USD',
+  },
+  rpcUrls: [tempoRpcUrl],
+  blockExplorerUrls: [tempoExplorerUrl],
+}
 
 export const config = createConfig({
   chains: [tempoModerato.extend({ feeToken: defaultPaymentToken.address })],
   connectors: [tempoWallet({ testnet: true }), metaMask(), injected()],
   multiInjectedProviderDiscovery: true,
   transports: {
-    [tempoModerato.id]: http('https://rpc.moderato.tempo.xyz'),
+    [tempoModerato.id]: http(tempoRpcUrl),
   },
 })
 

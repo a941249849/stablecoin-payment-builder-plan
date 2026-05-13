@@ -6,6 +6,8 @@ This plan connects the previous Tempo testnet article with a second-phase build:
 
 Arc research and demo work belongs to the next phase after the Tempo build has a clear public artifact and article.
 
+The plan should be judged by evidence, not by narrative momentum. Tempo-first is useful because the existing article and testnet experience create a builder advantage. Arc becomes useful once there is an equivalent artifact to compare against, especially while market attention is being pulled toward Arc token expectations.
+
 ## Day 1: Tempo Latest State Research and Article Outline
 
 Goals:
@@ -20,6 +22,7 @@ Outputs:
 - Current-state notes.
 - Article outline.
 - Updated build assumptions.
+- Explicit list of demo boundaries and risks before deeper implementation.
 
 ## Day 2: StablePay Frontend and Invoice Flow
 
@@ -45,6 +48,7 @@ Goals:
 - Send a TIP-20 `transferWithMemo` transaction using the selected stablecoin.
 - Preserve the tx hash and explorer link.
 - Document wallet behavior and any fee-token quirks.
+- Do not present the flow as complete until send errors and wallet/network states are visible in the UI.
 
 Outputs:
 
@@ -117,4 +121,3 @@ After the Tempo demo and article are published:
 - Refresh Arc's latest status.
 - Build a comparable Arc payment or checkout demo if docs and network access allow.
 - Write a comparison report based on actual implementation evidence rather than market attention alone.
-

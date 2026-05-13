@@ -13,6 +13,7 @@ This repository is used to keep the build reproducible through GitHub and Vercel
 
 Start with:
 
+- [Tempo Current State Review](docs/tempo-current-state.md)
 - [Tempo Build Gate](docs/tempo-build-gate.md)
 - [Vercel Deployment](docs/vercel-deployment.md)
 - [Tempo StablePay App](apps/tempo-stablepay/README.md)
@@ -26,6 +27,7 @@ Current engineering focus:
 3. Validate faucet funding on Tempo Testnet.
 4. Send a self-paid memo transfer with pathUSD, AlphaUSD, BetaUSD, or ThetaUSD.
 5. Confirm `TransferWithMemo` reconciliation from the live transaction.
+6. Keep Arc work as the next implementation-backed comparison phase after the Tempo demo and article are published.
 
 Public repo principles:
 
