@@ -19,6 +19,7 @@ import { PaymentNetwork } from './PaymentNetwork'
 import {
   defaultPaymentToken,
   docsUrl,
+  explorerBlockUrl,
   explorerTransactionUrl,
   faucetApiUrl,
   faucetUrl,
@@ -71,6 +72,8 @@ const copy = {
     send: '发送',
     delete: '删除',
     receipt: '交易详情',
+    blockProof: '区块证明',
+    onchainProof: '链上证明',
     switch: '切换网络',
     switching: '正在请求钱包切换网络...',
     disconnect: '断开连接',
@@ -93,7 +96,7 @@ const copy = {
     wrongNetwork: '当前钱包不在 Tempo Testnet，请先切换网络。',
     balanceLoading: '读取中...',
     walletConfirm: '请在钱包中确认这笔测试网付款。',
-    paymentSent: '交易已提交，正在等待链上确认和 memo 对账。若 explorer 短时间内未索引，请复制交易 hash 到 Tempo Explorer 搜索。',
+    paymentSent: '交易已确认，并已用 receipt 中的 TransferWithMemo 完成发票对账。若交易详情页 404，请先打开区块证明。',
     paymentError: '发送失败',
     policyTitle: '付款资格检查',
     policyIdle: '连接钱包并填写收款地址后，发送前会自动确认这笔测试网付款是否可以发起。',
@@ -143,6 +146,8 @@ const copy = {
     send: 'Send',
     delete: 'Delete',
     receipt: 'Transaction',
+    blockProof: 'Block proof',
+    onchainProof: 'Onchain proof',
     switch: 'Switch network',
     switching: 'Requesting wallet network switch...',
     disconnect: 'Disconnect',
@@ -166,7 +171,7 @@ const copy = {
     balanceLoading: 'Loading...',
     walletConfirm: 'Confirm this testnet payment in your wallet.',
     paymentSent:
-      'Transaction submitted. Waiting for onchain confirmation and memo reconciliation. If the explorer has not indexed it yet, copy the transaction hash into Tempo Explorer search.',
+      'Transaction confirmed and reconciled from the TransferWithMemo event in the receipt. If the transaction page returns 404, open the block proof first.',
     paymentError: 'Send failed',
     policyTitle: 'Payment eligibility check',
     policyIdle: 'Connect a wallet and enter a recipient. The app checks whether this testnet payment can be sent before opening the wallet.',
@@ -421,7 +426,11 @@ export function App() {
               item.id === invoice.id
                 ? {
                     ...item,
-                    status: 'pending',
+                    status: 'paid',
+                    blockNumber: result.receipt.blockNumber.toString(),
+                    feeToken: result.receipt.feeToken,
+                    matchedAt: new Date().toISOString(),
+                    sender: result.receipt.from,
                     txHash: result.receipt.transactionHash,
                   }
                 : item,
@@ -716,6 +725,8 @@ export function App() {
                   onSend={() => void sendInvoice(invoice)}
                   deleteLabel={t.delete}
                   receiptLabel={t.receipt}
+                  blockProofLabel={t.blockProof}
+                  onchainProofLabel={t.onchainProof}
                   sendLabel={t.send}
                   switchLabel={t.switch}
                 />
@@ -802,6 +813,8 @@ function InvoiceRow({
   onSend,
   deleteLabel,
   receiptLabel,
+  blockProofLabel,
+  onchainProofLabel,
   sendLabel,
   switchLabel,
 }: {
@@ -817,6 +830,8 @@ function InvoiceRow({
   onSend: () => void
   deleteLabel: string
   receiptLabel: string
+  blockProofLabel: string
+  onchainProofLabel: string
   sendLabel: string
   switchLabel: string
 }) {
@@ -836,6 +851,13 @@ function InvoiceRow({
         <span className={`status ${invoice.status}`}>{invoice.status}</span>
       </div>
       <div className="memo">{decodeMemo(invoice.memo)}</div>
+      {invoice.txHash ? (
+        <div className="proof">
+          <span>{onchainProofLabel}</span>
+          <strong>{shortAddress(invoice.txHash)}</strong>
+          {invoice.blockNumber ? <small>Block {invoice.blockNumber}</small> : null}
+        </div>
+      ) : null}
       <div className="actions">
         <button
           type="button"
@@ -860,6 +882,11 @@ function InvoiceRow({
         {invoice.txHash ? (
           <a href={explorerTransactionUrl(invoice.txHash)} target="_blank" rel="noreferrer">
             {receiptLabel}
+          </a>
+        ) : null}
+        {invoice.blockNumber ? (
+          <a className="secondary" href={explorerBlockUrl(invoice.blockNumber)} target="_blank" rel="noreferrer">
+            {blockProofLabel}
           </a>
         ) : null}
       </div>

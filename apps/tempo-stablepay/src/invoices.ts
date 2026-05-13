@@ -8,6 +8,9 @@ export type Invoice = {
   memo: `0x${string}`
   status: InvoiceStatus
   txHash?: `0x${string}`
+  blockNumber?: string
+  sender?: `0x${string}`
+  feeToken?: `0x${string}`
   matchedAt?: string
   createdAt: string
 }

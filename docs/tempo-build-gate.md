@@ -142,7 +142,7 @@ Build:
 - Stablecoin transfer with memo for PathUSD, AlphaUSD, BetaUSD, and ThetaUSD.
 - Fee token selection among PathUSD and AlphaUSD until live fee liquidity/support is validated for additional test tokens.
 - Reconciliation by `TransferWithMemo`.
-- Explorer transaction link from transaction hash using `https://explore.tempo.xyz/tx/{hash}`. The explorer can expose a receipt view from the transaction page when available.
+- Explorer transaction link from transaction hash using `https://explore.tempo.xyz/tx/{hash}` plus block-number proof from the RPC receipt, because explorer tx/address indexing can lag or miss Tempo Wallet WebAuthn transactions even after the RPC receipt is available.
 - README with setup, source links, and verified limitations.
 
 Defer:
