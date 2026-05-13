@@ -35,10 +35,10 @@ Use official testnet token-list entries for the v1 demo.
 
 | Token | Symbol | Address | Decimals | v1 Role |
 | --- | --- | --- | --- | --- |
-| PathUSD | `pathUSD` | `0x20c0000000000000000000000000000000000000` | 6 | fee-token option |
-| AlphaUSD | `alphaUSD` | `0x20c0000000000000000000000000000000000001` | 6 | default payment token and fee-token option |
-| BetaUSD | `betaUSD` | `0x20c0000000000000000000000000000000000002` | 6 | fee-token option |
-| ThetaUSD | `thetaUSD` | `0x20c0000000000000000000000000000000000003` | 6 | later test coverage |
+| PathUSD | `pathUSD` | `0x20c0000000000000000000000000000000000000` | 6 | payment and fee-token option |
+| AlphaUSD | `alphaUSD` | `0x20c0000000000000000000000000000000000001` | 6 | default payment and fee-token option |
+| BetaUSD | `betaUSD` | `0x20c0000000000000000000000000000000000002` | 6 | payment and fee-token option |
+| ThetaUSD | `thetaUSD` | `0x20c0000000000000000000000000000000000003` | 6 | payment and fee-token option |
 | USDC.e | `USDC.e` | `0x20c0000000000000000000009e8d7eb59b783726` | 6 | later compatibility check |
 | EURC.e | `EURC.e` | `0x20c000000000000000000000d72572838bbee59c` | 6 | later non-USD UX check |
 
@@ -72,7 +72,7 @@ The core v1 payment flow:
 
 1. Create a local invoice with amount, recipient, token, and short invoice ID.
 2. Encode invoice ID as `bytes32`.
-3. Submit an AlphaUSD `transferWithMemo`.
+3. Submit a selected test-stablecoin `transferWithMemo`.
 4. Show the receipt and explorer link.
 5. Watch or query `TransferWithMemo` logs for reconciliation.
 6. Match logs by recipient, token, and memo.
@@ -139,8 +139,8 @@ Build:
 - Wallet connection to Tempo Testnet.
 - Faucet/balance visibility if supported cleanly by the SDK.
 - Invoice creation.
-- AlphaUSD transfer with memo.
-- Fee token selection among PathUSD, AlphaUSD, and BetaUSD.
+- Stablecoin transfer with memo for PathUSD, AlphaUSD, BetaUSD, and ThetaUSD.
+- Fee token selection among PathUSD, AlphaUSD, BetaUSD, and ThetaUSD.
 - Reconciliation by `TransferWithMemo`.
 - Explorer link from transaction hash.
 - README with setup, source links, and verified limitations.
@@ -163,7 +163,7 @@ Ready to start implementation after these checks:
 
 1. Confirm the latest `tempoxyz/examples` payments app still builds locally.
 2. Confirm faucet access for the test wallet.
-3. Complete one self-paid AlphaUSD transfer with memo on Moderato.
+3. Complete one self-paid memo transfer on Moderato.
 4. Confirm `TransferWithMemo` log decoding for that transaction.
 5. Test the public sponsor service with one sponsored transaction, or explicitly keep sponsorship disabled.
 6. Record final explorer URL behavior because docs and examples reference different explorer hostnames.
@@ -180,4 +180,3 @@ Ready to start implementation after these checks:
 8. Add optional fee-token selector.
 9. Add optional sponsor toggle only after live sponsorship validation.
 10. Write public README and limitations before opening broader review.
-

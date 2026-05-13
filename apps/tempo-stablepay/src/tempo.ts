@@ -21,10 +21,22 @@ export const tokens = {
     address: '0x20c0000000000000000000000000000000000002',
     decimals: 6,
   },
+  thetaUsd: {
+    name: 'ThetaUSD',
+    symbol: 'thetaUSD',
+    address: '0x20c0000000000000000000000000000000000003',
+    decimals: 6,
+  },
 } as const
 
-export const paymentToken = tokens.alphaUsd
-export const feeTokens = [tokens.pathUsd, tokens.alphaUsd, tokens.betaUsd]
+export const stableTokens = [tokens.pathUsd, tokens.alphaUsd, tokens.betaUsd, tokens.thetaUsd] as const
+export type StableToken = (typeof stableTokens)[number]
+export const defaultPaymentToken = tokens.alphaUsd
+export const feeTokens = stableTokens
+
+export function findStableToken(address: `0x${string}`) {
+  return stableTokens.find((token) => token.address.toLowerCase() === address.toLowerCase()) ?? defaultPaymentToken
+}
 
 export const explorerBaseUrl = 'https://explore.testnet.tempo.xyz'
 export const faucetUrl = 'https://docs.tempo.xyz/quickstart/faucet'
@@ -32,7 +44,7 @@ export const faucetApiUrl = 'https://docs.tempo.xyz/api/faucet'
 export const docsUrl = 'https://docs.tempo.xyz'
 
 export const config = createConfig({
-  chains: [tempoModerato.extend({ feeToken: paymentToken.address })],
+  chains: [tempoModerato.extend({ feeToken: defaultPaymentToken.address })],
   connectors: [tempoWallet({ testnet: true }), metaMask(), injected()],
   multiInjectedProviderDiscovery: true,
   transports: {

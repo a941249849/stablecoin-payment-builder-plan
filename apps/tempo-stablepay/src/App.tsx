@@ -4,7 +4,16 @@ import { useAccount, useConnect, useDisconnect, useSwitchChain, useWatchContract
 import { Hooks } from 'wagmi/tempo'
 import { createInvoice, Invoice, loadInvoices, saveInvoices } from './invoices'
 import { decodeMemo, encodeMemo } from './memo'
-import { docsUrl, explorerBaseUrl, faucetApiUrl, faucetUrl, feeTokens, paymentToken } from './tempo'
+import {
+  defaultPaymentToken,
+  docsUrl,
+  explorerBaseUrl,
+  faucetApiUrl,
+  faucetUrl,
+  feeTokens,
+  findStableToken,
+  stableTokens,
+} from './tempo'
 
 const transferWithMemoEvent = parseAbiItem(
   'event TransferWithMemo(address indexed from, address indexed to, uint256 value, bytes32 indexed memo)',
@@ -18,16 +27,17 @@ const copy = {
     network: 'Tempo 测试网',
     title: 'Tempo StablePay',
     subtitle:
-      '一个用于验证 Tempo 稳定币支付工作流的测试网 demo：创建发票、写入 TIP-20 memo、发送 AlphaUSD，并用 TransferWithMemo 事件完成对账。',
+      '一个用于验证 Tempo 稳定币支付工作流的测试网 demo：选择 pathUSD、AlphaUSD、BetaUSD 或 ThetaUSD 创建发票，写入 TIP-20 memo，并用 TransferWithMemo 事件完成对账。',
     stack: '基于 Vite、React、Wagmi、Viem 和 tempo.ts 构建。',
     supportedWallets: '连接入口覆盖 Tempo Wallet，并通过浏览器注入钱包支持 OKX Wallet、MetaMask 等可添加 Tempo 网络的钱包。',
     language: 'English',
     invoice: '发票',
+    paymentToken: '付款代币',
     recipient: '收款地址',
     amount: '金额',
     feeToken: '手续费代币',
     create: '创建发票',
-    balance: 'AlphaUSD 余额',
+    balance: '当前付款代币余额',
     payments: '支付记录',
     empty: '还没有发票。',
     send: '发送',
@@ -48,17 +58,18 @@ const copy = {
     network: 'Tempo Testnet',
     title: 'Tempo StablePay',
     subtitle:
-      'A testnet demo for validating a Tempo stablecoin payment workflow: create an invoice, encode a TIP-20 memo, send AlphaUSD, and reconcile with TransferWithMemo events.',
+      'A testnet demo for validating a Tempo stablecoin payment workflow: choose pathUSD, AlphaUSD, BetaUSD, or ThetaUSD, create an invoice, encode a TIP-20 memo, and reconcile with TransferWithMemo events.',
     stack: 'Built with Vite, React, Wagmi, Viem, and tempo.ts.',
     supportedWallets:
       'Wallet access includes Tempo Wallet plus injected wallets such as OKX Wallet and MetaMask when they support or can add the Tempo network.',
     language: '中文',
     invoice: 'Invoice',
+    paymentToken: 'Payment token',
     recipient: 'Recipient',
     amount: 'Amount',
     feeToken: 'Fee token',
     create: 'Create invoice',
-    balance: 'AlphaUSD balance',
+    balance: 'Selected payment token balance',
     payments: 'Payments',
     empty: 'No invoices yet.',
     send: 'Send',
@@ -79,9 +90,10 @@ const copy = {
 
 export function App() {
   const [language, setLanguage] = useState<Language>('zh')
+  const [paymentTokenAddress, setPaymentTokenAddress] = useState<`0x${string}`>(defaultPaymentToken.address)
   const [recipient, setRecipient] = useState<`0x${string}`>('0x0000000000000000000000000000000000000000')
   const [amount, setAmount] = useState('100')
-  const [feeToken, setFeeToken] = useState<`0x${string}`>(paymentToken.address)
+  const [feeToken, setFeeToken] = useState<`0x${string}`>(defaultPaymentToken.address)
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>()
   const [faucetStatus, setFaucetStatus] = useState<FaucetStatus>('idle')
@@ -90,10 +102,7 @@ export function App() {
   const { disconnect } = useDisconnect()
   const { switchChain } = useSwitchChain()
   const transfer = Hooks.token.useTransferSync()
-  const balance = Hooks.token.useGetBalance({
-    account: address,
-    token: paymentToken.address,
-  })
+  const selectedPaymentToken = findStableToken(paymentTokenAddress)
 
   useEffect(() => {
     setInvoices(loadInvoices())
@@ -107,10 +116,15 @@ export function App() {
     () => invoices.find((invoice) => invoice.id === selectedInvoiceId) ?? invoices[0],
     [invoices, selectedInvoiceId],
   )
+  const selectedInvoiceToken = selectedInvoice ? findStableToken(selectedInvoice.token) : selectedPaymentToken
+  const balance = Hooks.token.useGetBalance({
+    account: address,
+    token: selectedPaymentToken.address,
+  })
   const t = copy[language]
 
   useWatchContractEvent({
-    address: paymentToken.address,
+    address: selectedInvoiceToken.address,
     abi: [transferWithMemoEvent],
     eventName: 'TransferWithMemo',
     args: selectedInvoice
@@ -152,7 +166,7 @@ export function App() {
       id,
       recipient,
       amount,
-      token: paymentToken.address,
+      token: selectedPaymentToken.address,
       memo: encodeMemo(id),
     })
 
@@ -161,11 +175,13 @@ export function App() {
   }
 
   function sendInvoice(invoice: Invoice) {
+    const invoiceToken = findStableToken(invoice.token)
+
     transfer.mutate(
       {
         token: invoice.token,
         to: invoice.recipient,
-        amount: parseUnits(invoice.amount, paymentToken.decimals),
+        amount: parseUnits(invoice.amount, invoiceToken.decimals),
         memo: invoice.memo,
         feeToken,
       },
@@ -232,7 +248,7 @@ export function App() {
           <p>{t.subtitle}</p>
           <div className="heroMeta">
             <span>TIP-20 memo</span>
-            <span>AlphaUSD</span>
+            <span>pathUSD / AlphaUSD / BetaUSD / ThetaUSD</span>
             <span>TransferWithMemo</span>
           </div>
           <p className="muted">{t.stack}</p>
@@ -289,10 +305,23 @@ export function App() {
           <section className="panel">
             <div className="panelHeader">
               <h2>{t.invoice}</h2>
-              <span>{paymentToken.symbol}</span>
+              <span>{selectedPaymentToken.symbol}</span>
             </div>
 
             <form onSubmit={addInvoice} className="stack">
+              <label>
+                {t.paymentToken}
+                <select
+                  value={paymentTokenAddress}
+                  onChange={(event) => setPaymentTokenAddress(event.target.value as `0x${string}`)}
+                >
+                  {stableTokens.map((token) => (
+                    <option key={token.address} value={token.address}>
+                      {token.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <label>
                 {t.recipient}
                 <input value={recipient} onChange={(event) => setRecipient(event.target.value as `0x${string}`)} />
@@ -317,7 +346,8 @@ export function App() {
             <div className="balance">
               <span>{t.balance}</span>
               <strong>
-                {balance.data === undefined ? '0.00' : formatUnits(balance.data, paymentToken.decimals)}
+                {balance.data === undefined ? '0.00' : formatUnits(balance.data, selectedPaymentToken.decimals)}{' '}
+                {selectedPaymentToken.symbol}
               </strong>
             </div>
           </section>
@@ -331,46 +361,78 @@ export function App() {
             <div className="invoiceList">
               {invoices.length === 0 ? <p className="empty">{t.empty}</p> : null}
               {invoices.map((invoice) => (
-                <article
-                  className={invoice.id === selectedInvoice?.id ? 'invoice active' : 'invoice'}
+                <InvoiceRow
+                  invoice={invoice}
+                  isActive={invoice.id === selectedInvoice?.id}
+                  isConnected={isConnected}
+                  isPending={transfer.isPending}
                   key={invoice.id}
-                  onClick={() => setSelectedInvoiceId(invoice.id)}
-                >
-                  <div>
-                    <h3>{invoice.id}</h3>
-                    <p>{shortAddress(invoice.recipient)}</p>
-                  </div>
-                  <div>
-                    <strong>
-                      {invoice.amount} {paymentToken.symbol}
-                    </strong>
-                    <span className={`status ${invoice.status}`}>{invoice.status}</span>
-                  </div>
-                  <div className="memo">{decodeMemo(invoice.memo)}</div>
-                  <div className="actions">
-                    <button
-                      type="button"
-                      disabled={!isConnected || transfer.isPending}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        sendInvoice(invoice)
-                      }}
-                    >
-                      {t.send}
-                    </button>
-                    {invoice.txHash ? (
-                      <a href={`${explorerBaseUrl}/tx/${invoice.txHash}`} target="_blank" rel="noreferrer">
-                        {t.receipt}
-                      </a>
-                    ) : null}
-                  </div>
-                </article>
+                  onSelect={() => setSelectedInvoiceId(invoice.id)}
+                  onSend={() => sendInvoice(invoice)}
+                  receiptLabel={t.receipt}
+                  sendLabel={t.send}
+                />
               ))}
             </div>
           </section>
         </div>
       </section>
     </main>
+  )
+}
+
+function InvoiceRow({
+  invoice,
+  isActive,
+  isConnected,
+  isPending,
+  onSelect,
+  onSend,
+  receiptLabel,
+  sendLabel,
+}: {
+  invoice: Invoice
+  isActive: boolean
+  isConnected: boolean
+  isPending: boolean
+  onSelect: () => void
+  onSend: () => void
+  receiptLabel: string
+  sendLabel: string
+}) {
+  const token = findStableToken(invoice.token)
+
+  return (
+    <article className={isActive ? 'invoice active' : 'invoice'} onClick={onSelect}>
+      <div>
+        <h3>{invoice.id}</h3>
+        <p>{shortAddress(invoice.recipient)}</p>
+      </div>
+      <div>
+        <strong>
+          {invoice.amount} {token.symbol}
+        </strong>
+        <span className={`status ${invoice.status}`}>{invoice.status}</span>
+      </div>
+      <div className="memo">{decodeMemo(invoice.memo)}</div>
+      <div className="actions">
+        <button
+          type="button"
+          disabled={!isConnected || isPending}
+          onClick={(event) => {
+            event.stopPropagation()
+            onSend()
+          }}
+        >
+          {sendLabel}
+        </button>
+        {invoice.txHash ? (
+          <a href={`${explorerBaseUrl}/tx/${invoice.txHash}`} target="_blank" rel="noreferrer">
+            {receiptLabel}
+          </a>
+        ) : null}
+      </div>
+    </article>
   )
 }
 

@@ -498,36 +498,37 @@ Acceptance criteria:
 
 Day 1:
 
-- Publish or finalize Tempo latest state research note.
-- Create GitHub issues.
+- Refresh Tempo latest state from official docs, GitHub, token list, and status sources.
+- Draft the second-phase article outline that connects to the earlier Tempo testnet walkthrough.
 
 Day 2:
 
-- Scaffold Tempo StablePay.
-- Configure network and wallet.
+- Scaffold Tempo StablePay frontend.
+- Configure network, wallets, faucet links, and local invoice flow.
 
 Day 3:
 
-- Build invoice creation and memo generation.
+- Run `transferWithMemo` with the selected test stablecoin.
+- Capture the first successful transaction hash.
 
 Day 4:
 
-- Implement `transferWithMemo`.
-- Capture first successful transaction.
+- Listen for `TransferWithMemo`.
+- Complete automatic invoice reconciliation.
 
 Day 5:
 
-- Implement event listener and reconciliation.
+- Test fee sponsorship if stable.
+- Add transaction display and explorer links.
 
 Day 6:
 
-- Add fee sponsorship if feasible.
-- Polish README and screenshots.
+- Polish README, screenshots, tx hash evidence, and limitations.
 
 Day 7:
 
-- Publish Tempo StablePay article.
-- Start Arc research note.
+- Publish the X long-form article.
+- Move Arc research and comparable demo planning into the next phase.
 
 ## 9. Success Criteria
 
@@ -569,8 +570,8 @@ Current decisions:
 
 1. Use Tempo Testnet (Moderato) for v1.
 2. Use Vite, React, TypeScript, Wagmi, Viem, `tempo.ts`, and TanStack Query.
-3. Use AlphaUSD as the default payment token.
-4. Use PathUSD, AlphaUSD, and BetaUSD as initial fee-token options.
+3. Support pathUSD, AlphaUSD, BetaUSD, and ThetaUSD as payment-token options.
+4. Support pathUSD, AlphaUSD, BetaUSD, and ThetaUSD as initial fee-token options.
 5. Use TIP-20 `transferWithMemo(address,uint256,bytes32)` for invoice references.
 6. Reconcile with `TransferWithMemo` logs.
 7. Store invoices locally in the browser for v1.
