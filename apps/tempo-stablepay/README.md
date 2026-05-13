@@ -8,6 +8,7 @@ The v1 demo targets Tempo Testnet (Moderato) and uses TIP-20 memo transfers:
 - fee-token options: PathUSD and AlphaUSD
 - transfer primitive: `transferWithMemo(address,uint256,bytes32)`
 - reconciliation event: `TransferWithMemo`
+- payment proof: RPC receipt, block number, transaction hash, from/to, token, fee token, memo, matched log index, copyable proof bundle
 - invoice storage: browser local storage
 - wallet access: Tempo Wallet, plus injected wallets such as OKX Wallet and MetaMask when available
 - faucet access: official Tempo faucet link, with an in-app request path for connected wallets

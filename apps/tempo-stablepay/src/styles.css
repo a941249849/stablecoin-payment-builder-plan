@@ -768,6 +768,45 @@ h3 {
   gap: 10px;
 }
 
+.proofConsole {
+  background: #f8f6ef;
+  border: 1px solid #ddd7ca;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px;
+}
+
+.proofConsoleHeader {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+}
+
+.proofConsoleHeader span {
+  color: #476a5b;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.proofConsoleHeader p,
+.emptyProof {
+  color: #666861;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+  margin-top: 4px;
+}
+
+.proofLookup {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .invoice {
   align-items: center;
   background: #f8f6ef;
@@ -776,7 +815,7 @@ h3 {
   cursor: pointer;
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(120px, 1fr) minmax(130px, 160px) minmax(120px, 1fr) minmax(120px, 160px) auto;
+  grid-template-columns: minmax(120px, 1fr) minmax(130px, 160px) minmax(120px, 1fr) auto;
   padding: 14px;
 }
 
@@ -828,7 +867,6 @@ h3 {
   border-radius: 6px;
   display: grid;
   gap: 8px;
-  grid-column: 1 / -1;
   padding: 12px;
 }
 
@@ -898,6 +936,12 @@ h3 {
   justify-content: flex-end;
 }
 
+.proofActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 @media (max-width: 840px) {
   .shell {
     padding: 18px;
@@ -931,6 +975,11 @@ h3 {
   }
 
   .invoice {
+    grid-template-columns: 1fr;
+  }
+
+  .proofConsoleHeader,
+  .proofLookup {
     grid-template-columns: 1fr;
   }
 

@@ -143,6 +143,7 @@ Build:
 - Fee token selection among PathUSD and AlphaUSD until live fee liquidity/support is validated for additional test tokens.
 - Reconciliation by `TransferWithMemo`.
 - Explorer transaction link from transaction hash using `https://explore.tempo.xyz/tx/{hash}` plus block-number proof from the RPC receipt, because explorer tx/address indexing can lag or miss Tempo Wallet WebAuthn transactions even after the RPC receipt is available.
+- Copyable RPC proof bundle with tx hash, block number, sender, recipient, token, fee token, memo, matched log index, and reconciliation time.
 - README with setup, source links, and verified limitations.
 
 Defer:

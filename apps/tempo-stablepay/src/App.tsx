@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { formatUnits, isAddress, parseAbiItem, parseUnits, toEventHash, zeroAddress } from 'viem'
+import { formatUnits, isAddress, isHash, parseAbiItem, parseUnits, toEventHash, zeroAddress } from 'viem'
 import {
   useAccount,
   useConnect,
@@ -75,6 +75,11 @@ const copy = {
     receipt: '交易详情',
     blockProof: '区块证明',
     onchainProof: '链上证明',
+    proofConsole: '付款证明台',
+    proofConsoleHint: '选中发票后发送或粘贴交易 hash，系统会从 Tempo RPC 拉取 receipt 并校验 TransferWithMemo。',
+    proofEmpty: '选中一张发票并完成发送后，这里会显示完整链上证明。',
+    verifyTx: '校验交易',
+    txHashInput: '粘贴交易 Hash',
     explorerTx: 'Explorer 交易页',
     explorerHint: 'Explorer 交易页可能短时 404；RPC receipt 与区块证明为准。',
     verifyReceipt: '刷新 RPC 证明',
@@ -167,6 +172,11 @@ const copy = {
     receipt: 'Transaction',
     blockProof: 'Block proof',
     onchainProof: 'Onchain proof',
+    proofConsole: 'Payment proof console',
+    proofConsoleHint: 'Select an invoice, send or paste a transaction hash, and the app verifies the Tempo RPC receipt plus TransferWithMemo.',
+    proofEmpty: 'Select an invoice and complete a send to show the full onchain proof here.',
+    verifyTx: 'Verify tx',
+    txHashInput: 'Paste transaction hash',
     explorerTx: 'Explorer transaction',
     explorerHint: 'The explorer transaction page can briefly 404; rely on RPC receipt and block proof first.',
     verifyReceipt: 'Refresh RPC proof',
@@ -240,6 +250,7 @@ export function App() {
   const [allowExperimentalWallet, setAllowExperimentalWallet] = useState(false)
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>()
+  const [proofHashInput, setProofHashInput] = useState('')
   const [faucetStatus, setFaucetStatus] = useState<FaucetStatus>('idle')
   const [actionState, setActionState] = useState<ActionState>()
   const { address, chainId, connector, isConnected } = useAccount()
@@ -350,6 +361,10 @@ export function App() {
       setRecipient(address)
     }
   }, [address, recipient, recipientTouched])
+
+  useEffect(() => {
+    setProofHashInput(selectedInvoice?.txHash ?? '')
+  }, [selectedInvoice?.txHash])
 
   useWatchContractEvent({
     address: selectedInvoiceToken.address,
@@ -481,11 +496,12 @@ export function App() {
     )
   }
 
-  async function verifyInvoiceReceipt(invoice: Invoice) {
-    if (!publicClient || !invoice.txHash) return
+  async function verifyInvoiceReceipt(invoice: Invoice, txHashOverride?: `0x${string}`) {
+    const txHash = txHashOverride ?? invoice.txHash
+    if (!publicClient || !txHash) return
 
     try {
-      const receipt = await publicClient.getTransactionReceipt({ hash: invoice.txHash })
+      const receipt = await publicClient.getTransactionReceipt({ hash: txHash })
       const proof = buildReceiptProof(receipt, invoice)
       setInvoices((current) =>
         current.map((item) =>
@@ -501,6 +517,15 @@ export function App() {
     } catch {
       setActionState({ tone: 'error', text: t.receiptVerifyFailed })
     }
+  }
+
+  function verifyManualProof() {
+    if (!selectedInvoice || !isHash(proofHashInput)) {
+      setActionState({ tone: 'error', text: t.receiptVerifyFailed })
+      return
+    }
+
+    void verifyInvoiceReceipt(selectedInvoice, proofHashInput as `0x${string}`)
   }
 
   async function switchToTempo() {
@@ -765,6 +790,52 @@ export function App() {
               </div>
             </div>
 
+            <section className="proofConsole">
+              <div className="proofConsoleHeader">
+                <div>
+                  <span>{t.proofConsole}</span>
+                  <p>{t.proofConsoleHint}</p>
+                </div>
+                <div className="proofLookup">
+                  <input
+                    aria-label={t.txHashInput}
+                    placeholder={t.txHashInput}
+                    value={proofHashInput}
+                    onChange={(event) => setProofHashInput(event.target.value)}
+                  />
+                  <button type="button" className="secondary" disabled={!selectedInvoice} onClick={verifyManualProof}>
+                    {t.verifyTx}
+                  </button>
+                </div>
+              </div>
+              {selectedInvoice?.txHash ? (
+                <PaymentProof
+                  blockProofLabel={t.blockProof}
+                  copiedLabel={t.copied}
+                  copyLabel={t.copy}
+                  copyProofLabel={t.copyProof}
+                  explorerHintLabel={t.explorerHint}
+                  explorerTxLabel={t.explorerTx}
+                  feePaidLabel={t.feePaid}
+                  fromLabel={t.from}
+                  invoice={selectedInvoice}
+                  logIndexLabel={t.logIndex}
+                  matchedAtLabel={t.matchedAt}
+                  memoLabel={t.memo}
+                  memoMatchedLabel={t.memoMatched}
+                  memoUnmatchedLabel={t.memoUnmatched}
+                  onVerify={() => void verifyInvoiceReceipt(selectedInvoice)}
+                  onchainProofLabel={t.onchainProof}
+                  toLabel={t.to}
+                  tokenLabel={t.token}
+                  txHashLabel={t.txHash}
+                  verifyReceiptLabel={t.verifyReceipt}
+                />
+              ) : (
+                <p className="emptyProof">{t.proofEmpty}</p>
+              )}
+            </section>
+
             <div className="invoiceList">
               {invoices.length === 0 ? <p className="empty">{t.empty}</p> : null}
               {invoices.map((invoice) => (
@@ -781,25 +852,6 @@ export function App() {
                   onDelete={() => deleteInvoice(invoice.id)}
                   onSend={() => void sendInvoice(invoice)}
                   deleteLabel={t.delete}
-                  blockProofLabel={t.blockProof}
-                  copiedLabel={t.copied}
-                  copyLabel={t.copy}
-                  copyProofLabel={t.copyProof}
-                  explorerHintLabel={t.explorerHint}
-                  explorerTxLabel={t.explorerTx}
-                  feePaidLabel={t.feePaid}
-                  fromLabel={t.from}
-                  logIndexLabel={t.logIndex}
-                  matchedAtLabel={t.matchedAt}
-                  memoLabel={t.memo}
-                  memoMatchedLabel={t.memoMatched}
-                  memoUnmatchedLabel={t.memoUnmatched}
-                  onchainProofLabel={t.onchainProof}
-                  onVerify={() => void verifyInvoiceReceipt(invoice)}
-                  toLabel={t.to}
-                  tokenLabel={t.token}
-                  txHashLabel={t.txHash}
-                  verifyReceiptLabel={t.verifyReceipt}
                   sendLabel={t.send}
                   switchLabel={t.switch}
                 />
@@ -924,27 +976,8 @@ function InvoiceRow({
   onSelect,
   onSend,
   deleteLabel,
-  blockProofLabel,
-  copiedLabel,
-  copyLabel,
-  copyProofLabel,
-  explorerHintLabel,
-  explorerTxLabel,
-  feePaidLabel,
-  fromLabel,
-  logIndexLabel,
-  matchedAtLabel,
-  memoLabel,
-  memoMatchedLabel,
-  memoUnmatchedLabel,
-  onchainProofLabel,
-  onVerify,
   sendLabel,
   switchLabel,
-  toLabel,
-  tokenLabel,
-  txHashLabel,
-  verifyReceiptLabel,
 }: {
   invoice: Invoice
   isActive: boolean
@@ -957,51 +990,11 @@ function InvoiceRow({
   onSelect: () => void
   onSend: () => void
   deleteLabel: string
-  blockProofLabel: string
-  copiedLabel: string
-  copyLabel: string
-  copyProofLabel: string
-  explorerHintLabel: string
-  explorerTxLabel: string
-  feePaidLabel: string
-  fromLabel: string
-  logIndexLabel: string
-  matchedAtLabel: string
-  memoLabel: string
-  memoMatchedLabel: string
-  memoUnmatchedLabel: string
-  onchainProofLabel: string
-  onVerify: () => void
   sendLabel: string
   switchLabel: string
-  toLabel: string
-  tokenLabel: string
-  txHashLabel: string
-  verifyReceiptLabel: string
 }) {
-  const [copiedField, setCopiedField] = useState<string>()
   const token = findStableToken(invoice.token)
-  const feeTokenDetail = invoice.feeToken ? findStableToken(invoice.feeToken) : undefined
   const invoiceRecipientIsValid = isUsableAddress(invoice.recipient)
-  const matchedAt = invoice.matchedAt ? new Date(invoice.matchedAt).toLocaleString() : undefined
-  const proofText = [
-    `${txHashLabel}: ${invoice.txHash ?? '-'}`,
-    `Block: ${invoice.blockNumber ?? '-'}`,
-    `${fromLabel}: ${invoice.sender ?? '-'}`,
-    `${toLabel}: ${invoice.recipient}`,
-    `${tokenLabel}: ${invoice.amount} ${token.symbol}`,
-    `${feePaidLabel}: ${feeTokenDetail ? feeTokenDetail.symbol : invoice.feeToken ?? '-'}`,
-    `${memoLabel}: ${decodeMemo(invoice.memo)} / ${invoice.memo}`,
-    `${memoMatchedLabel}: ${invoice.memoMatched ? 'true' : 'false'}`,
-    `${logIndexLabel}: ${invoice.transferLogIndex ?? '-'}`,
-    `${matchedAtLabel}: ${matchedAt ?? '-'}`,
-  ].join('\n')
-
-  async function copyProofValue(field: string, value: string) {
-    await navigator.clipboard.writeText(value)
-    setCopiedField(field)
-    window.setTimeout(() => setCopiedField(undefined), 1500)
-  }
 
   return (
     <article className={isActive ? 'invoice active' : 'invoice'} onClick={onSelect}>
@@ -1016,64 +1009,6 @@ function InvoiceRow({
         <span className={`status ${invoice.status}`}>{invoice.status}</span>
       </div>
       <div className="memo">{decodeMemo(invoice.memo)}</div>
-      {invoice.txHash ? (
-        <div className="proof">
-          <div className="proofHeader">
-            <span>{onchainProofLabel}</span>
-            <strong className={invoice.memoMatched ? 'proofOk' : 'proofWarn'}>
-              {invoice.memoMatched ? memoMatchedLabel : memoUnmatchedLabel}
-            </strong>
-            <button
-              type="button"
-              className="secondary compactButton"
-              onClick={(event) => {
-                event.stopPropagation()
-                void copyProofValue('proof', proofText)
-              }}
-            >
-              {copiedField === 'proof' ? copiedLabel : copyProofLabel}
-            </button>
-          </div>
-          <ProofRow
-            copied={copiedField === 'hash'}
-            copiedLabel={copiedLabel}
-            copyLabel={copyLabel}
-            label={txHashLabel}
-            onCopy={() => copyProofValue('hash', invoice.txHash!)}
-            value={invoice.txHash}
-          />
-          <ProofRow
-            copied={copiedField === 'memo'}
-            copiedLabel={copiedLabel}
-            copyLabel={copyLabel}
-            label={memoLabel}
-            onCopy={() => copyProofValue('memo', invoice.memo)}
-            value={`${decodeMemo(invoice.memo)} / ${invoice.memo}`}
-          />
-          <ProofRow
-            copied={copiedField === 'from'}
-            copiedLabel={copiedLabel}
-            copyLabel={copyLabel}
-            label={fromLabel}
-            onCopy={invoice.sender ? () => copyProofValue('from', invoice.sender!) : undefined}
-            value={invoice.sender ?? '-'}
-          />
-          <ProofRow
-            copied={copiedField === 'to'}
-            copiedLabel={copiedLabel}
-            copyLabel={copyLabel}
-            label={toLabel}
-            onCopy={() => copyProofValue('to', invoice.recipient)}
-            value={invoice.recipient}
-          />
-          <ProofRow label={tokenLabel} value={`${invoice.amount} ${token.symbol}`} />
-          <ProofRow label={feePaidLabel} value={feeTokenDetail ? feeTokenDetail.symbol : invoice.feeToken ?? '-'} />
-          {invoice.blockNumber ? <ProofRow label="Block" value={invoice.blockNumber} /> : null}
-          {invoice.transferLogIndex !== undefined ? <ProofRow label={logIndexLabel} value={String(invoice.transferLogIndex)} /> : null}
-          {matchedAt ? <ProofRow label={matchedAtLabel} value={matchedAt} /> : null}
-          <p>{explorerHintLabel}</p>
-        </div>
-      ) : null}
       <div className="actions">
         <button
           type="button"
@@ -1095,6 +1030,131 @@ function InvoiceRow({
         >
           {isConnected && !isTempoNetwork ? switchLabel : sendLabel}
         </button>
+      </div>
+    </article>
+  )
+}
+
+function PaymentProof({
+  blockProofLabel,
+  copiedLabel,
+  copyLabel,
+  copyProofLabel,
+  explorerHintLabel,
+  explorerTxLabel,
+  feePaidLabel,
+  fromLabel,
+  invoice,
+  logIndexLabel,
+  matchedAtLabel,
+  memoLabel,
+  memoMatchedLabel,
+  memoUnmatchedLabel,
+  onVerify,
+  onchainProofLabel,
+  toLabel,
+  tokenLabel,
+  txHashLabel,
+  verifyReceiptLabel,
+}: {
+  blockProofLabel: string
+  copiedLabel: string
+  copyLabel: string
+  copyProofLabel: string
+  explorerHintLabel: string
+  explorerTxLabel: string
+  feePaidLabel: string
+  fromLabel: string
+  invoice: Invoice
+  logIndexLabel: string
+  matchedAtLabel: string
+  memoLabel: string
+  memoMatchedLabel: string
+  memoUnmatchedLabel: string
+  onVerify: () => void
+  onchainProofLabel: string
+  toLabel: string
+  tokenLabel: string
+  txHashLabel: string
+  verifyReceiptLabel: string
+}) {
+  const [copiedField, setCopiedField] = useState<string>()
+  const token = findStableToken(invoice.token)
+  const feeTokenDetail = invoice.feeToken ? findStableToken(invoice.feeToken) : undefined
+  const matchedAt = invoice.matchedAt ? new Date(invoice.matchedAt).toLocaleString() : undefined
+  const proofText = [
+    `${txHashLabel}: ${invoice.txHash ?? '-'}`,
+    `Block: ${invoice.blockNumber ?? '-'}`,
+    `${fromLabel}: ${invoice.sender ?? '-'}`,
+    `${toLabel}: ${invoice.recipient}`,
+    `${tokenLabel}: ${invoice.amount} ${token.symbol}`,
+    `${feePaidLabel}: ${feeTokenDetail ? feeTokenDetail.symbol : invoice.feeToken ?? '-'}`,
+    `${memoLabel}: ${decodeMemo(invoice.memo)} / ${invoice.memo}`,
+    `${memoMatchedLabel}: ${invoice.memoMatched ? 'true' : 'false'}`,
+    `${logIndexLabel}: ${invoice.transferLogIndex ?? '-'}`,
+    `${matchedAtLabel}: ${matchedAt ?? '-'}`,
+  ].join('\n')
+
+  async function copyProofValue(field: string, value: string) {
+    await navigator.clipboard.writeText(value)
+    setCopiedField(field)
+    window.setTimeout(() => setCopiedField(undefined), 1500)
+  }
+
+  return (
+    <div className="proof">
+      <div className="proofHeader">
+        <span>{onchainProofLabel}</span>
+        <strong className={invoice.memoMatched ? 'proofOk' : 'proofWarn'}>
+          {invoice.memoMatched ? memoMatchedLabel : memoUnmatchedLabel}
+        </strong>
+        <button
+          type="button"
+          className="secondary compactButton"
+          onClick={() => void copyProofValue('proof', proofText)}
+        >
+          {copiedField === 'proof' ? copiedLabel : copyProofLabel}
+        </button>
+      </div>
+      <ProofRow
+        copied={copiedField === 'hash'}
+        copiedLabel={copiedLabel}
+        copyLabel={copyLabel}
+        label={txHashLabel}
+        onCopy={() => copyProofValue('hash', invoice.txHash!)}
+        value={invoice.txHash ?? '-'}
+      />
+      <ProofRow
+        copied={copiedField === 'memo'}
+        copiedLabel={copiedLabel}
+        copyLabel={copyLabel}
+        label={memoLabel}
+        onCopy={() => copyProofValue('memo', invoice.memo)}
+        value={`${decodeMemo(invoice.memo)} / ${invoice.memo}`}
+      />
+      <ProofRow
+        copied={copiedField === 'from'}
+        copiedLabel={copiedLabel}
+        copyLabel={copyLabel}
+        label={fromLabel}
+        onCopy={invoice.sender ? () => copyProofValue('from', invoice.sender!) : undefined}
+        value={invoice.sender ?? '-'}
+      />
+      <ProofRow
+        copied={copiedField === 'to'}
+        copiedLabel={copiedLabel}
+        copyLabel={copyLabel}
+        label={toLabel}
+        onCopy={() => copyProofValue('to', invoice.recipient)}
+        value={invoice.recipient}
+      />
+      <ProofRow label={tokenLabel} value={`${invoice.amount} ${token.symbol}`} />
+      <ProofRow label={feePaidLabel} value={feeTokenDetail ? feeTokenDetail.symbol : invoice.feeToken ?? '-'} />
+      {invoice.blockNumber ? <ProofRow label="Block" value={invoice.blockNumber} /> : null}
+      {invoice.transferLogIndex !== undefined ? <ProofRow label={logIndexLabel} value={String(invoice.transferLogIndex)} /> : null}
+      {matchedAt ? <ProofRow label={matchedAtLabel} value={matchedAt} /> : null}
+      <p>{explorerHintLabel}</p>
+      <div className="proofActions">
         {invoice.txHash ? (
           <a href={explorerTransactionUrl(invoice.txHash)} target="_blank" rel="noreferrer">
             {explorerTxLabel}
@@ -1106,19 +1166,12 @@ function InvoiceRow({
           </a>
         ) : null}
         {invoice.txHash ? (
-          <button
-            type="button"
-            className="secondary"
-            onClick={(event) => {
-              event.stopPropagation()
-              onVerify()
-            }}
-          >
+          <button type="button" className="secondary" onClick={onVerify}>
             {verifyReceiptLabel}
           </button>
         ) : null}
       </div>
-    </article>
+    </div>
   )
 }
 
