@@ -827,27 +827,68 @@ h3 {
   border: 1px solid #c9d7cc;
   border-radius: 6px;
   display: grid;
-  gap: 4px;
-  padding: 9px 10px;
+  gap: 8px;
+  grid-column: 1 / -1;
+  padding: 12px;
 }
 
-.proof span {
+.proofHeader {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.proofHeader span,
+.proofRow span {
   color: #476a5b;
   font-size: 11px;
   font-weight: 900;
   text-transform: uppercase;
 }
 
-.proof strong {
+.proofHeader strong {
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+.proofOk {
+  background: #d7ecde;
+  color: #2f7d51;
+}
+
+.proofWarn {
+  background: #f9e2df;
+  color: #9b3d35;
+}
+
+.proofRow {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 120px minmax(0, 1fr) auto;
+}
+
+.proofRow code {
   color: #17201b;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
+  overflow-wrap: anywhere;
 }
 
-.proof small {
+.proof p {
   color: #666861;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
+  line-height: 1.45;
+}
+
+.compactButton {
+  font-size: 12px;
+  min-height: 32px;
+  padding: 0 10px;
 }
 
 .actions {
@@ -895,6 +936,11 @@ h3 {
 
   .actions {
     justify-content: start;
+  }
+
+  .proofRow {
+    align-items: start;
+    grid-template-columns: 1fr;
   }
 
   .canvasHeader,

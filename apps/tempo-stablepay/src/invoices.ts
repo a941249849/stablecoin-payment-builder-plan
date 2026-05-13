@@ -11,6 +11,8 @@ export type Invoice = {
   blockNumber?: string
   sender?: `0x${string}`
   feeToken?: `0x${string}`
+  memoMatched?: boolean
+  transferLogIndex?: number
   matchedAt?: string
   createdAt: string
 }

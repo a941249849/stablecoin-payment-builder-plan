@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { formatUnits, isAddress, parseAbiItem, parseUnits, zeroAddress } from 'viem'
+import { formatUnits, isAddress, parseAbiItem, parseUnits, toEventHash, zeroAddress } from 'viem'
 import {
   useAccount,
   useConnect,
@@ -33,6 +33,7 @@ import {
 const transferWithMemoEvent = parseAbiItem(
   'event TransferWithMemo(address indexed from, address indexed to, uint256 value, bytes32 indexed memo)',
 )
+const transferWithMemoTopic = toEventHash('TransferWithMemo(address,address,uint256,bytes32)').toLowerCase()
 const balanceOfAbi = [parseAbiItem('function balanceOf(address account) view returns (uint256)')]
 
 type FaucetStatus = 'idle' | 'pending' | 'success' | 'error'
@@ -74,6 +75,22 @@ const copy = {
     receipt: '交易详情',
     blockProof: '区块证明',
     onchainProof: '链上证明',
+    explorerTx: 'Explorer 交易页',
+    explorerHint: 'Explorer 交易页可能短时 404；RPC receipt 与区块证明为准。',
+    verifyReceipt: '刷新 RPC 证明',
+    copy: '复制',
+    copyProof: '复制证明',
+    copied: '已复制',
+    txHash: '交易 Hash',
+    from: '付款方',
+    to: '收款方',
+    token: '代币',
+    memo: 'Memo',
+    feePaid: '手续费代币',
+    memoMatched: 'TransferWithMemo 已匹配',
+    memoUnmatched: '未匹配 TransferWithMemo',
+    matchedAt: '对账时间',
+    logIndex: '日志序号',
     switch: '切换网络',
     switching: '正在请求钱包切换网络...',
     disconnect: '断开连接',
@@ -97,6 +114,8 @@ const copy = {
     balanceLoading: '读取中...',
     walletConfirm: '请在钱包中确认这笔测试网付款。',
     paymentSent: '交易已确认，并已用 receipt 中的 TransferWithMemo 完成发票对账。若交易详情页 404，请先打开区块证明。',
+    receiptVerified: 'RPC receipt 已刷新，并完成 memo 对账检查。',
+    receiptVerifyFailed: '暂时无法从 RPC 刷新 receipt，请稍后再试。',
     paymentError: '发送失败',
     policyTitle: '付款资格检查',
     policyIdle: '连接钱包并填写收款地址后，发送前会自动确认这笔测试网付款是否可以发起。',
@@ -148,6 +167,22 @@ const copy = {
     receipt: 'Transaction',
     blockProof: 'Block proof',
     onchainProof: 'Onchain proof',
+    explorerTx: 'Explorer transaction',
+    explorerHint: 'The explorer transaction page can briefly 404; rely on RPC receipt and block proof first.',
+    verifyReceipt: 'Refresh RPC proof',
+    copy: 'Copy',
+    copyProof: 'Copy proof',
+    copied: 'Copied',
+    txHash: 'Transaction hash',
+    from: 'From',
+    to: 'To',
+    token: 'Token',
+    memo: 'Memo',
+    feePaid: 'Fee token',
+    memoMatched: 'TransferWithMemo matched',
+    memoUnmatched: 'TransferWithMemo not matched',
+    matchedAt: 'Matched at',
+    logIndex: 'Log index',
     switch: 'Switch network',
     switching: 'Requesting wallet network switch...',
     disconnect: 'Disconnect',
@@ -172,6 +207,8 @@ const copy = {
     walletConfirm: 'Confirm this testnet payment in your wallet.',
     paymentSent:
       'Transaction confirmed and reconciled from the TransferWithMemo event in the receipt. If the transaction page returns 404, open the block proof first.',
+    receiptVerified: 'RPC receipt refreshed and memo reconciliation checked.',
+    receiptVerifyFailed: 'Could not refresh the RPC receipt yet. Try again shortly.',
     paymentError: 'Send failed',
     policyTitle: 'Payment eligibility check',
     policyIdle: 'Connect a wallet and enter a recipient. The app checks whether this testnet payment can be sent before opening the wallet.',
@@ -341,6 +378,8 @@ export function App() {
             ...invoice,
             status: 'paid',
             txHash: match.transactionHash ?? undefined,
+            memoMatched: true,
+            transferLogIndex: match.logIndex,
             matchedAt: new Date().toISOString(),
           }
         }),
@@ -421,17 +460,13 @@ export function App() {
       },
       {
         onSuccess: (result) => {
+          const proof = buildReceiptProof(result.receipt, invoice)
           setInvoices((current) =>
             current.map((item) =>
               item.id === invoice.id
                 ? {
                     ...item,
-                    status: 'paid',
-                    blockNumber: result.receipt.blockNumber.toString(),
-                    feeToken: result.receipt.feeToken,
-                    matchedAt: new Date().toISOString(),
-                    sender: result.receipt.from,
-                    txHash: result.receipt.transactionHash,
+                    ...proof,
                   }
                 : item,
             ),
@@ -444,6 +479,28 @@ export function App() {
         },
       },
     )
+  }
+
+  async function verifyInvoiceReceipt(invoice: Invoice) {
+    if (!publicClient || !invoice.txHash) return
+
+    try {
+      const receipt = await publicClient.getTransactionReceipt({ hash: invoice.txHash })
+      const proof = buildReceiptProof(receipt, invoice)
+      setInvoices((current) =>
+        current.map((item) =>
+          item.id === invoice.id
+            ? {
+                ...item,
+                ...proof,
+              }
+            : item,
+        ),
+      )
+      setActionState({ tone: proof.memoMatched ? 'success' : 'error', text: t.receiptVerified })
+    } catch {
+      setActionState({ tone: 'error', text: t.receiptVerifyFailed })
+    }
   }
 
   async function switchToTempo() {
@@ -724,9 +781,25 @@ export function App() {
                   onDelete={() => deleteInvoice(invoice.id)}
                   onSend={() => void sendInvoice(invoice)}
                   deleteLabel={t.delete}
-                  receiptLabel={t.receipt}
                   blockProofLabel={t.blockProof}
+                  copiedLabel={t.copied}
+                  copyLabel={t.copy}
+                  copyProofLabel={t.copyProof}
+                  explorerHintLabel={t.explorerHint}
+                  explorerTxLabel={t.explorerTx}
+                  feePaidLabel={t.feePaid}
+                  fromLabel={t.from}
+                  logIndexLabel={t.logIndex}
+                  matchedAtLabel={t.matchedAt}
+                  memoLabel={t.memo}
+                  memoMatchedLabel={t.memoMatched}
+                  memoUnmatchedLabel={t.memoUnmatched}
                   onchainProofLabel={t.onchainProof}
+                  onVerify={() => void verifyInvoiceReceipt(invoice)}
+                  toLabel={t.to}
+                  tokenLabel={t.token}
+                  txHashLabel={t.txHash}
+                  verifyReceiptLabel={t.verifyReceipt}
                   sendLabel={t.send}
                   switchLabel={t.switch}
                 />
@@ -800,6 +873,45 @@ async function readPolicyPreflight(
   }
 }
 
+type ReceiptLike = {
+  blockNumber: bigint
+  feeToken?: `0x${string}`
+  from: `0x${string}`
+  logs: readonly {
+    address: `0x${string}`
+    logIndex?: number
+    topics: readonly string[]
+  }[]
+  status?: string
+  transactionHash: `0x${string}`
+}
+
+function buildReceiptProof(receipt: ReceiptLike, invoice: Invoice) {
+  const memoLog = receipt.logs.find((log) => {
+    const [topic, fromTopic, toTopic, memoTopic] = log.topics
+    return (
+      log.address.toLowerCase() === invoice.token.toLowerCase() &&
+      topic?.toLowerCase() === transferWithMemoTopic &&
+      Boolean(fromTopic) &&
+      toTopic?.toLowerCase().endsWith(invoice.recipient.slice(2).toLowerCase()) &&
+      memoTopic?.toLowerCase() === invoice.memo.toLowerCase()
+    )
+  })
+
+  const memoMatched = Boolean(memoLog)
+
+  return {
+    blockNumber: receipt.blockNumber.toString(),
+    feeToken: receipt.feeToken,
+    matchedAt: new Date().toISOString(),
+    memoMatched,
+    sender: receipt.from,
+    status: memoMatched && receipt.status === 'success' ? ('paid' as const) : ('needs-review' as const),
+    transferLogIndex: memoLog?.logIndex,
+    txHash: receipt.transactionHash,
+  }
+}
+
 function InvoiceRow({
   invoice,
   isActive,
@@ -812,11 +924,27 @@ function InvoiceRow({
   onSelect,
   onSend,
   deleteLabel,
-  receiptLabel,
   blockProofLabel,
+  copiedLabel,
+  copyLabel,
+  copyProofLabel,
+  explorerHintLabel,
+  explorerTxLabel,
+  feePaidLabel,
+  fromLabel,
+  logIndexLabel,
+  matchedAtLabel,
+  memoLabel,
+  memoMatchedLabel,
+  memoUnmatchedLabel,
   onchainProofLabel,
+  onVerify,
   sendLabel,
   switchLabel,
+  toLabel,
+  tokenLabel,
+  txHashLabel,
+  verifyReceiptLabel,
 }: {
   invoice: Invoice
   isActive: boolean
@@ -829,14 +957,51 @@ function InvoiceRow({
   onSelect: () => void
   onSend: () => void
   deleteLabel: string
-  receiptLabel: string
   blockProofLabel: string
+  copiedLabel: string
+  copyLabel: string
+  copyProofLabel: string
+  explorerHintLabel: string
+  explorerTxLabel: string
+  feePaidLabel: string
+  fromLabel: string
+  logIndexLabel: string
+  matchedAtLabel: string
+  memoLabel: string
+  memoMatchedLabel: string
+  memoUnmatchedLabel: string
   onchainProofLabel: string
+  onVerify: () => void
   sendLabel: string
   switchLabel: string
+  toLabel: string
+  tokenLabel: string
+  txHashLabel: string
+  verifyReceiptLabel: string
 }) {
+  const [copiedField, setCopiedField] = useState<string>()
   const token = findStableToken(invoice.token)
+  const feeTokenDetail = invoice.feeToken ? findStableToken(invoice.feeToken) : undefined
   const invoiceRecipientIsValid = isUsableAddress(invoice.recipient)
+  const matchedAt = invoice.matchedAt ? new Date(invoice.matchedAt).toLocaleString() : undefined
+  const proofText = [
+    `${txHashLabel}: ${invoice.txHash ?? '-'}`,
+    `Block: ${invoice.blockNumber ?? '-'}`,
+    `${fromLabel}: ${invoice.sender ?? '-'}`,
+    `${toLabel}: ${invoice.recipient}`,
+    `${tokenLabel}: ${invoice.amount} ${token.symbol}`,
+    `${feePaidLabel}: ${feeTokenDetail ? feeTokenDetail.symbol : invoice.feeToken ?? '-'}`,
+    `${memoLabel}: ${decodeMemo(invoice.memo)} / ${invoice.memo}`,
+    `${memoMatchedLabel}: ${invoice.memoMatched ? 'true' : 'false'}`,
+    `${logIndexLabel}: ${invoice.transferLogIndex ?? '-'}`,
+    `${matchedAtLabel}: ${matchedAt ?? '-'}`,
+  ].join('\n')
+
+  async function copyProofValue(field: string, value: string) {
+    await navigator.clipboard.writeText(value)
+    setCopiedField(field)
+    window.setTimeout(() => setCopiedField(undefined), 1500)
+  }
 
   return (
     <article className={isActive ? 'invoice active' : 'invoice'} onClick={onSelect}>
@@ -853,9 +1018,60 @@ function InvoiceRow({
       <div className="memo">{decodeMemo(invoice.memo)}</div>
       {invoice.txHash ? (
         <div className="proof">
-          <span>{onchainProofLabel}</span>
-          <strong>{shortAddress(invoice.txHash)}</strong>
-          {invoice.blockNumber ? <small>Block {invoice.blockNumber}</small> : null}
+          <div className="proofHeader">
+            <span>{onchainProofLabel}</span>
+            <strong className={invoice.memoMatched ? 'proofOk' : 'proofWarn'}>
+              {invoice.memoMatched ? memoMatchedLabel : memoUnmatchedLabel}
+            </strong>
+            <button
+              type="button"
+              className="secondary compactButton"
+              onClick={(event) => {
+                event.stopPropagation()
+                void copyProofValue('proof', proofText)
+              }}
+            >
+              {copiedField === 'proof' ? copiedLabel : copyProofLabel}
+            </button>
+          </div>
+          <ProofRow
+            copied={copiedField === 'hash'}
+            copiedLabel={copiedLabel}
+            copyLabel={copyLabel}
+            label={txHashLabel}
+            onCopy={() => copyProofValue('hash', invoice.txHash!)}
+            value={invoice.txHash}
+          />
+          <ProofRow
+            copied={copiedField === 'memo'}
+            copiedLabel={copiedLabel}
+            copyLabel={copyLabel}
+            label={memoLabel}
+            onCopy={() => copyProofValue('memo', invoice.memo)}
+            value={`${decodeMemo(invoice.memo)} / ${invoice.memo}`}
+          />
+          <ProofRow
+            copied={copiedField === 'from'}
+            copiedLabel={copiedLabel}
+            copyLabel={copyLabel}
+            label={fromLabel}
+            onCopy={invoice.sender ? () => copyProofValue('from', invoice.sender!) : undefined}
+            value={invoice.sender ?? '-'}
+          />
+          <ProofRow
+            copied={copiedField === 'to'}
+            copiedLabel={copiedLabel}
+            copyLabel={copyLabel}
+            label={toLabel}
+            onCopy={() => copyProofValue('to', invoice.recipient)}
+            value={invoice.recipient}
+          />
+          <ProofRow label={tokenLabel} value={`${invoice.amount} ${token.symbol}`} />
+          <ProofRow label={feePaidLabel} value={feeTokenDetail ? feeTokenDetail.symbol : invoice.feeToken ?? '-'} />
+          {invoice.blockNumber ? <ProofRow label="Block" value={invoice.blockNumber} /> : null}
+          {invoice.transferLogIndex !== undefined ? <ProofRow label={logIndexLabel} value={String(invoice.transferLogIndex)} /> : null}
+          {matchedAt ? <ProofRow label={matchedAtLabel} value={matchedAt} /> : null}
+          <p>{explorerHintLabel}</p>
         </div>
       ) : null}
       <div className="actions">
@@ -881,7 +1097,7 @@ function InvoiceRow({
         </button>
         {invoice.txHash ? (
           <a href={explorerTransactionUrl(invoice.txHash)} target="_blank" rel="noreferrer">
-            {receiptLabel}
+            {explorerTxLabel}
           </a>
         ) : null}
         {invoice.blockNumber ? (
@@ -889,8 +1105,55 @@ function InvoiceRow({
             {blockProofLabel}
           </a>
         ) : null}
+        {invoice.txHash ? (
+          <button
+            type="button"
+            className="secondary"
+            onClick={(event) => {
+              event.stopPropagation()
+              onVerify()
+            }}
+          >
+            {verifyReceiptLabel}
+          </button>
+        ) : null}
       </div>
     </article>
+  )
+}
+
+function ProofRow({
+  copied,
+  copiedLabel,
+  copyLabel,
+  label,
+  onCopy,
+  value,
+}: {
+  copied?: boolean
+  copiedLabel?: string
+  copyLabel?: string
+  label: string
+  onCopy?: () => void
+  value: string
+}) {
+  return (
+    <div className="proofRow">
+      <span>{label}</span>
+      <code>{value}</code>
+      {onCopy ? (
+        <button
+          type="button"
+          className="secondary compactButton"
+          onClick={(event) => {
+            event.stopPropagation()
+            void onCopy()
+          }}
+        >
+          {copied ? copiedLabel : copyLabel}
+        </button>
+      ) : null}
+    </div>
   )
 }
 
