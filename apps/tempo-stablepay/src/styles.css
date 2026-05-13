@@ -287,6 +287,9 @@ h3 {
 }
 
 .canvasBoard {
+  align-content: center;
+  display: grid;
+  gap: 28px;
   min-height: 320px;
   position: relative;
 }
@@ -304,8 +307,9 @@ h3 {
   display: grid;
   gap: 8px;
   min-width: 0;
+  min-height: 112px;
   padding: 14px;
-  position: absolute;
+  position: relative;
   z-index: 2;
 }
 
@@ -319,74 +323,80 @@ h3 {
   line-height: 1.05;
 }
 
-.businessCard {
-  left: 4%;
-  top: 35%;
-  width: 145px;
-}
-
-.walletCard {
-  left: 31%;
-  top: 35%;
-  width: 145px;
-}
-
 .tempoCard {
   background: #070908;
   color: #fff;
-  left: 54%;
-  top: 26%;
-  width: 145px;
 }
 
 .tempoCard strong {
   color: #fff;
 }
 
-.ledgerCard {
-  right: 4%;
-  top: 35%;
-  width: 130px;
+.canvasFlow {
+  align-items: stretch;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(118px, 1fr) 26px minmax(118px, 1fr) 26px minmax(118px, 1fr) 26px minmax(118px, 1fr);
+  position: relative;
+  z-index: 2;
 }
 
-.rail {
-  display: none;
+.flowArrow {
+  align-self: center;
+  background: #70b694;
+  height: 3px;
+  position: relative;
 }
 
-.flowConnectors {
-  height: 100%;
-  inset: 0;
+.flowArrow::after {
+  border-bottom: 6px solid transparent;
+  border-left: 8px solid #70b694;
+  border-top: 6px solid transparent;
+  content: "";
   position: absolute;
-  width: 100%;
-  z-index: 1;
+  right: -1px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
-.flowConnectors path {
-  fill: none;
-  marker-end: url(#paymentArrow);
-  stroke: #70b694;
-  stroke-linecap: round;
-  stroke-width: 3;
+.flowTrack {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid #ddd7ca;
+  border-radius: 6px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  min-height: 46px;
+  overflow: hidden;
+  padding: 0 14px;
+  position: relative;
+  z-index: 2;
 }
 
-.flowConnectors marker path {
-  fill: #70b694;
+.flowTrack::before {
+  background: #70b694;
+  content: "";
+  height: 3px;
+  left: 14px;
+  position: absolute;
+  right: 54px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
-.memoChip {
+.flowTrack span {
   background: #82bea2;
   border-radius: 3px;
   color: #fff;
   font-size: 12px;
   font-weight: 800;
-  left: 50%;
+  justify-self: center;
   padding: 7px 10px;
-  position: absolute;
-  top: 47%;
-  z-index: 3;
+  position: relative;
+  z-index: 2;
 }
 
-.movingTx {
+.flowTrack i {
   align-items: center;
   animation: canvasTx 5s ease-in-out infinite;
   background: #111612;
@@ -394,14 +404,12 @@ h3 {
   color: #7ff0aa;
   display: inline-flex;
   font-size: 13px;
+  font-style: normal;
   font-weight: 900;
   height: 28px;
   justify-content: center;
-  left: 29%;
-  position: absolute;
-  top: 42%;
   width: 28px;
-  z-index: 4;
+  z-index: 2;
 }
 
 .flowSteps {
@@ -695,6 +703,10 @@ h3 {
   margin-top: 12px;
 }
 
+.fieldHint.compact {
+  margin-top: -6px;
+}
+
 .fieldHint.error {
   background: #f9e2df;
   color: #9b3d35;
@@ -830,11 +842,25 @@ h3 {
     top: auto;
   }
 
-  .rail,
-  .flowConnectors,
-  .memoChip,
-  .movingTx {
-    display: none;
+  .canvasFlow {
+    grid-template-columns: 1fr;
+  }
+
+  .flowArrow {
+    height: 22px;
+    justify-self: center;
+    width: 3px;
+  }
+
+  .flowArrow::after {
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid #70b694;
+    bottom: -1px;
+    left: 50%;
+    right: auto;
+    top: auto;
+    transform: translateX(-50%);
   }
 
   .recipientControl {
@@ -853,16 +879,16 @@ h3 {
   }
 
   50% {
-    transform: translate(190px, 70px);
+    transform: translateX(-260px);
   }
 
   82% {
-    transform: translate(405px, 6px);
+    transform: translateX(-80px);
     opacity: 1;
   }
 
   100% {
-    transform: translate(510px, 12px);
+    transform: translateX(0);
     opacity: 0;
   }
 }

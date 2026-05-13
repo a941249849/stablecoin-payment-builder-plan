@@ -58,6 +58,7 @@ const copy = {
     useWallet: '使用当前钱包',
     amount: '金额',
     feeToken: '手续费代币',
+    feeTokenHint: 'Moderato 测试网优先使用 pathUSD 或 AlphaUSD 支付手续费。',
     create: '创建发票',
     balance: '当前付款代币余额',
     balances: '测试币余额',
@@ -94,11 +95,11 @@ const copy = {
     policyRecipientBlocked: '收款地址暂时不能接收这类测试币，请换成已领水的钱包地址。',
     policyUnavailable: '暂时无法完成付款检查，请确认钱包已切换到 Tempo Testnet 后重试。',
     rpcSubmitError:
-      '钱包没有完成这笔测试网交易。请确认已切换到 Tempo Testnet，并尝试使用 Tempo Wallet、OKX Wallet 或 MetaMask 重新连接后再发送。',
+      '钱包没有完成这笔测试网交易。Tempo 的测试网交易需要钱包和 RPC 支持稳定币手续费；请确认网络为 Tempo Testnet，并优先用 Tempo Wallet 或 OKX Wallet 重新连接后再发送。',
     policyId: 'Policy ID',
     switchSuccess: '已切换到 Tempo Testnet。',
     switchError: '网络切换失败，请在钱包中手动添加 Tempo Testnet。',
-    invalidRecipient: '收款地址不可用。请使用有效地址，不能是 0x000...000。',
+    invalidRecipient: '收款地址不可用。请使用有效钱包地址，不能是 0x000...000 或 TIP-20 代币合约地址。',
     invalidInvoice: '这张发票的收款地址无效，请重新创建。',
   },
   en: {
@@ -119,6 +120,7 @@ const copy = {
     useWallet: 'Use current wallet',
     amount: 'Amount',
     feeToken: 'Fee token',
+    feeTokenHint: 'Moderato testnet works best with pathUSD or AlphaUSD for fees.',
     create: 'Create invoice',
     balance: 'Selected payment token balance',
     balances: 'Test token balances',
@@ -155,11 +157,11 @@ const copy = {
     policyRecipientBlocked: 'This recipient cannot receive this test token yet. Use a funded wallet address.',
     policyUnavailable: 'Payment check is temporarily unavailable. Confirm Tempo Testnet and try again.',
     rpcSubmitError:
-      'The wallet did not complete this testnet transaction. Confirm Tempo Testnet, then reconnect with Tempo Wallet, OKX Wallet, or MetaMask and try again.',
+      'The wallet did not complete this testnet transaction. Tempo testnet transactions need wallet and RPC support for stablecoin fees. Confirm Tempo Testnet, then prefer Tempo Wallet or OKX Wallet and try again.',
     policyId: 'Policy ID',
     switchSuccess: 'Switched to Tempo Testnet.',
     switchError: 'Network switch failed. Add Tempo Testnet manually in the wallet.',
-    invalidRecipient: 'Recipient is not usable. Use a valid non-zero address.',
+    invalidRecipient: 'Recipient is not usable. Use a valid wallet address, not the zero address or a TIP-20 token contract.',
     invalidInvoice: 'This invoice has an invalid recipient. Create a new one.',
   },
 } as const
@@ -180,7 +182,7 @@ export function App() {
   const { connectors, connect, isPending: isConnecting } = useConnect()
   const { disconnect } = useDisconnect()
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain()
-  const transfer = Hooks.token.useTransfer()
+  const transfer = Hooks.token.useTransferSync()
   const selectedPaymentToken = findStableToken(paymentTokenAddress)
 
   useEffect(() => {
@@ -385,14 +387,14 @@ export function App() {
         feeToken,
       },
       {
-        onSuccess: (hash) => {
+        onSuccess: (result) => {
           setInvoices((current) =>
             current.map((item) =>
               item.id === invoice.id
                 ? {
                     ...item,
                     status: 'pending',
-                    txHash: hash,
+                    txHash: result.receipt.transactionHash,
                   }
                 : item,
             ),
@@ -599,6 +601,7 @@ export function App() {
                   ))}
                 </select>
               </label>
+              <p className="fieldHint compact">{t.feeTokenHint}</p>
               <button type="submit" disabled={!recipientIsValid}>
                 {t.create}
               </button>
@@ -828,7 +831,11 @@ function shortAddress(value: string | undefined) {
 }
 
 function isUsableAddress(value: string | undefined): value is `0x${string}` {
-  return Boolean(value && isAddress(value) && value.toLowerCase() !== zeroAddress)
+  return Boolean(value && isAddress(value) && value.toLowerCase() !== zeroAddress && !isTip20TokenAddress(value))
+}
+
+function isTip20TokenAddress(value: string) {
+  return value.toLowerCase().startsWith('0x20c000000000000000000000')
 }
 
 function formatTransferError(error: Error, fallback: string, policyError: string) {

@@ -32,7 +32,7 @@ export const tokens = {
 export const stableTokens = [tokens.pathUsd, tokens.alphaUsd, tokens.betaUsd, tokens.thetaUsd] as const
 export type StableToken = (typeof stableTokens)[number]
 export const defaultPaymentToken = tokens.alphaUsd
-export const feeTokens = stableTokens
+export const feeTokens = [tokens.pathUsd, tokens.alphaUsd] as const
 
 export function findStableToken(address: `0x${string}`) {
   return stableTokens.find((token) => token.address.toLowerCase() === address.toLowerCase()) ?? defaultPaymentToken

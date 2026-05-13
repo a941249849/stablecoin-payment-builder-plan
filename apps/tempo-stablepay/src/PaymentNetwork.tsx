@@ -56,38 +56,32 @@ export function PaymentNetwork({ language }: { language: Language }) {
 
       <div className="canvasBoard">
         <div className="gridWash" />
-        <div className="entityCard businessCard">
-          <strong>{copy.business}</strong>
-          <span>{copy.invoice}</span>
-          <b>{copy.amount}</b>
+        <div className="canvasFlow">
+          <div className="entityCard">
+            <strong>{copy.business}</strong>
+            <span>{copy.invoice}</span>
+            <b>{copy.amount}</b>
+          </div>
+          <div className="flowArrow" aria-hidden="true" />
+          <div className="entityCard">
+            <strong>{copy.wallet}</strong>
+            <span>{copy.signed}</span>
+          </div>
+          <div className="flowArrow" aria-hidden="true" />
+          <div className="entityCard tempoCard">
+            <strong>{copy.tempo}</strong>
+            <span>{copy.fee}</span>
+          </div>
+          <div className="flowArrow" aria-hidden="true" />
+          <div className="entityCard">
+            <strong>{copy.ledger}</strong>
+            <span>{copy.reconciled}</span>
+          </div>
         </div>
-        <div className="entityCard walletCard">
-          <strong>{copy.wallet}</strong>
-          <span>{copy.signed}</span>
+        <div className="flowTrack">
+          <span>{copy.memo}</span>
+          <i aria-hidden="true">T</i>
         </div>
-        <div className="entityCard tempoCard">
-          <strong>{copy.tempo}</strong>
-          <span>{copy.fee}</span>
-        </div>
-        <div className="entityCard ledgerCard">
-          <strong>{copy.ledger}</strong>
-          <span>{copy.reconciled}</span>
-        </div>
-        <div className="rail railOne" />
-        <div className="rail railTwo" />
-        <div className="rail railThree" />
-        <svg className="flowConnectors" viewBox="0 0 680 320" aria-hidden="true">
-          <defs>
-            <marker id="paymentArrow" markerHeight="8" markerWidth="8" orient="auto" refX="6" refY="4">
-              <path d="M0 0 L8 4 L0 8 Z" />
-            </marker>
-          </defs>
-          <path d="M172 160 C188 160 196 160 212 160" />
-          <path d="M356 160 C384 160 354 132 368 132" />
-          <path d="M512 132 C532 132 500 160 518 160" />
-        </svg>
-        <div className="memoChip">{copy.memo}</div>
-        <div className="movingTx">T</div>
       </div>
 
       <div className="flowSteps" aria-label={copy.title}>
