@@ -866,8 +866,63 @@ h3 {
   border: 1px solid #c9d7cc;
   border-radius: 6px;
   display: grid;
-  gap: 8px;
+  gap: 12px;
   padding: 12px;
+}
+
+.loopPanel {
+  background: #fffefa;
+  border: 1px solid #c9d7cc;
+  border-radius: 6px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.loopPanel > span {
+  color: #476a5b;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.loopSteps {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.loopStep {
+  align-items: center;
+  background: #f4f1e8;
+  border: 1px solid #ddd7ca;
+  border-radius: 6px;
+  color: #666861;
+  display: flex;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 10px;
+}
+
+.loopStep span {
+  align-items: center;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 22px;
+  justify-content: center;
+  width: 22px;
+}
+
+.loopStep strong {
+  font-size: 12px;
+}
+
+.loopStep.done {
+  background: #e4eee5;
+  border-color: #b6c9ba;
+  color: #2f7d51;
 }
 
 .proofHeader {
@@ -989,6 +1044,10 @@ h3 {
 
   .proofRow {
     align-items: start;
+    grid-template-columns: 1fr;
+  }
+
+  .loopSteps {
     grid-template-columns: 1fr;
   }
 

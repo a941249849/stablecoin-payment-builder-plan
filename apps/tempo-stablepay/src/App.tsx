@@ -78,10 +78,22 @@ const copy = {
     proofConsole: '付款证明台',
     proofConsoleHint: '选中发票后发送或粘贴交易 hash，系统会从 Tempo RPC 拉取 receipt 并校验 TransferWithMemo。',
     proofEmpty: '选中一张发票并完成发送后，这里会显示完整链上证明。',
+    paymentLoop: '支付闭环',
+    loopInvoice: '发票已创建',
+    loopWallet: '钱包已发送',
+    loopRpc: 'RPC 已确认',
+    loopMemo: 'Memo 已对账',
+    rpcReceipt: 'RPC Receipt',
+    rpcEndpoint: 'RPC 端点',
+    receiptStatus: 'Receipt 状态',
+    blockHash: '区块 Hash',
+    txIndex: '交易序号',
+    explorerStatus: 'Explorer 状态',
+    explorerNotIndexed: 'Explorer 未索引/路由 404',
     verifyTx: '校验交易',
     txHashInput: '粘贴交易 Hash',
     explorerTx: 'Explorer 交易页',
-    explorerHint: 'Explorer 交易页可能短时 404；RPC receipt 与区块证明为准。',
+    explorerHint: '当前交易可通过 Tempo RPC receipt 检索确认；Explorer 交易页可能未索引并返回 404，不能作为唯一证明源。',
     verifyReceipt: '刷新 RPC 证明',
     copy: '复制',
     copyProof: '复制证明',
@@ -175,10 +187,22 @@ const copy = {
     proofConsole: 'Payment proof console',
     proofConsoleHint: 'Select an invoice, send or paste a transaction hash, and the app verifies the Tempo RPC receipt plus TransferWithMemo.',
     proofEmpty: 'Select an invoice and complete a send to show the full onchain proof here.',
+    paymentLoop: 'Payment loop',
+    loopInvoice: 'Invoice created',
+    loopWallet: 'Wallet sent',
+    loopRpc: 'RPC confirmed',
+    loopMemo: 'Memo reconciled',
+    rpcReceipt: 'RPC Receipt',
+    rpcEndpoint: 'RPC endpoint',
+    receiptStatus: 'Receipt status',
+    blockHash: 'Block hash',
+    txIndex: 'Tx index',
+    explorerStatus: 'Explorer status',
+    explorerNotIndexed: 'Explorer not indexed / route 404',
     verifyTx: 'Verify tx',
     txHashInput: 'Paste transaction hash',
     explorerTx: 'Explorer transaction',
-    explorerHint: 'The explorer transaction page can briefly 404; rely on RPC receipt and block proof first.',
+    explorerHint: 'This transaction is verifiable through the Tempo RPC receipt. The explorer transaction page may be unindexed and return 404, so it is not the source of truth.',
     verifyReceipt: 'Refresh RPC proof',
     copy: 'Copy',
     copyProof: 'Copy proof',
@@ -820,15 +844,27 @@ export function App() {
                   fromLabel={t.from}
                   invoice={selectedInvoice}
                   logIndexLabel={t.logIndex}
+                  loopInvoiceLabel={t.loopInvoice}
+                  loopMemoLabel={t.loopMemo}
+                  loopRpcLabel={t.loopRpc}
+                  loopWalletLabel={t.loopWallet}
                   matchedAtLabel={t.matchedAt}
                   memoLabel={t.memo}
                   memoMatchedLabel={t.memoMatched}
                   memoUnmatchedLabel={t.memoUnmatched}
                   onVerify={() => void verifyInvoiceReceipt(selectedInvoice)}
                   onchainProofLabel={t.onchainProof}
+                  paymentLoopLabel={t.paymentLoop}
+                  receiptStatusLabel={t.receiptStatus}
+                  rpcEndpointLabel={t.rpcEndpoint}
+                  rpcReceiptLabel={t.rpcReceipt}
                   toLabel={t.to}
                   tokenLabel={t.token}
+                  blockHashLabel={t.blockHash}
+                  explorerStatusLabel={t.explorerStatus}
+                  explorerNotIndexedLabel={t.explorerNotIndexed}
                   txHashLabel={t.txHash}
+                  txIndexLabel={t.txIndex}
                   verifyReceiptLabel={t.verifyReceipt}
                 />
               ) : (
@@ -927,6 +963,7 @@ async function readPolicyPreflight(
 
 type ReceiptLike = {
   blockNumber: bigint
+  blockHash: `0x${string}`
   feeToken?: `0x${string}`
   from: `0x${string}`
   logs: readonly {
@@ -935,6 +972,7 @@ type ReceiptLike = {
     topics: readonly string[]
   }[]
   status?: string
+  transactionIndex?: number
   transactionHash: `0x${string}`
 }
 
@@ -953,12 +991,15 @@ function buildReceiptProof(receipt: ReceiptLike, invoice: Invoice) {
   const memoMatched = Boolean(memoLog)
 
   return {
+    blockHash: receipt.blockHash,
     blockNumber: receipt.blockNumber.toString(),
     feeToken: receipt.feeToken,
     matchedAt: new Date().toISOString(),
     memoMatched,
+    receiptStatus: receipt.status,
     sender: receipt.from,
     status: memoMatched && receipt.status === 'success' ? ('paid' as const) : ('needs-review' as const),
+    transactionIndex: receipt.transactionIndex === undefined ? undefined : String(receipt.transactionIndex),
     transferLogIndex: memoLog?.logIndex,
     txHash: receipt.transactionHash,
   }
@@ -1046,15 +1087,27 @@ function PaymentProof({
   fromLabel,
   invoice,
   logIndexLabel,
+  loopInvoiceLabel,
+  loopMemoLabel,
+  loopRpcLabel,
+  loopWalletLabel,
   matchedAtLabel,
   memoLabel,
   memoMatchedLabel,
   memoUnmatchedLabel,
   onVerify,
   onchainProofLabel,
+  paymentLoopLabel,
+  receiptStatusLabel,
+  rpcEndpointLabel,
+  rpcReceiptLabel,
   toLabel,
   tokenLabel,
+  blockHashLabel,
+  explorerStatusLabel,
+  explorerNotIndexedLabel,
   txHashLabel,
+  txIndexLabel,
   verifyReceiptLabel,
 }: {
   blockProofLabel: string
@@ -1067,15 +1120,27 @@ function PaymentProof({
   fromLabel: string
   invoice: Invoice
   logIndexLabel: string
+  loopInvoiceLabel: string
+  loopMemoLabel: string
+  loopRpcLabel: string
+  loopWalletLabel: string
   matchedAtLabel: string
   memoLabel: string
   memoMatchedLabel: string
   memoUnmatchedLabel: string
   onVerify: () => void
   onchainProofLabel: string
+  paymentLoopLabel: string
+  receiptStatusLabel: string
+  rpcEndpointLabel: string
+  rpcReceiptLabel: string
   toLabel: string
   tokenLabel: string
+  blockHashLabel: string
+  explorerStatusLabel: string
+  explorerNotIndexedLabel: string
   txHashLabel: string
+  txIndexLabel: string
   verifyReceiptLabel: string
 }) {
   const [copiedField, setCopiedField] = useState<string>()
@@ -1084,7 +1149,10 @@ function PaymentProof({
   const matchedAt = invoice.matchedAt ? new Date(invoice.matchedAt).toLocaleString() : undefined
   const proofText = [
     `${txHashLabel}: ${invoice.txHash ?? '-'}`,
+    `${receiptStatusLabel}: ${invoice.receiptStatus ?? '-'}`,
     `Block: ${invoice.blockNumber ?? '-'}`,
+    `${blockHashLabel}: ${invoice.blockHash ?? '-'}`,
+    `${txIndexLabel}: ${invoice.transactionIndex ?? '-'}`,
     `${fromLabel}: ${invoice.sender ?? '-'}`,
     `${toLabel}: ${invoice.recipient}`,
     `${tokenLabel}: ${invoice.amount} ${token.symbol}`,
@@ -1103,6 +1171,15 @@ function PaymentProof({
 
   return (
     <div className="proof">
+      <div className="loopPanel">
+        <span>{paymentLoopLabel}</span>
+        <div className="loopSteps">
+          <LoopStep done label={loopInvoiceLabel} />
+          <LoopStep done={Boolean(invoice.txHash)} label={loopWalletLabel} />
+          <LoopStep done={invoice.receiptStatus === 'success'} label={loopRpcLabel} />
+          <LoopStep done={Boolean(invoice.memoMatched)} label={loopMemoLabel} />
+        </div>
+      </div>
       <div className="proofHeader">
         <span>{onchainProofLabel}</span>
         <strong className={invoice.memoMatched ? 'proofOk' : 'proofWarn'}>
@@ -1124,6 +1201,8 @@ function PaymentProof({
         onCopy={() => copyProofValue('hash', invoice.txHash!)}
         value={invoice.txHash ?? '-'}
       />
+      <ProofRow label={rpcReceiptLabel} value={invoice.receiptStatus ?? '-'} />
+      <ProofRow label={rpcEndpointLabel} value="https://rpc.moderato.tempo.xyz" />
       <ProofRow
         copied={copiedField === 'memo'}
         copiedLabel={copiedLabel}
@@ -1151,8 +1230,11 @@ function PaymentProof({
       <ProofRow label={tokenLabel} value={`${invoice.amount} ${token.symbol}`} />
       <ProofRow label={feePaidLabel} value={feeTokenDetail ? feeTokenDetail.symbol : invoice.feeToken ?? '-'} />
       {invoice.blockNumber ? <ProofRow label="Block" value={invoice.blockNumber} /> : null}
+      {invoice.blockHash ? <ProofRow label={blockHashLabel} value={invoice.blockHash} /> : null}
+      {invoice.transactionIndex ? <ProofRow label={txIndexLabel} value={invoice.transactionIndex} /> : null}
       {invoice.transferLogIndex !== undefined ? <ProofRow label={logIndexLabel} value={String(invoice.transferLogIndex)} /> : null}
       {matchedAt ? <ProofRow label={matchedAtLabel} value={matchedAt} /> : null}
+      <ProofRow label={explorerStatusLabel} value={explorerNotIndexedLabel} />
       <p>{explorerHintLabel}</p>
       <div className="proofActions">
         {invoice.txHash ? (
@@ -1206,6 +1288,15 @@ function ProofRow({
           {copied ? copiedLabel : copyLabel}
         </button>
       ) : null}
+    </div>
+  )
+}
+
+function LoopStep({ done, label }: { done: boolean; label: string }) {
+  return (
+    <div className={done ? 'loopStep done' : 'loopStep'}>
+      <span>{done ? '✓' : '·'}</span>
+      <strong>{label}</strong>
     </div>
   )
 }
