@@ -1,7 +1,7 @@
 # Tempo and Arc Stablecoin Payment Builder Plan
 
-Status: Draft for GitHub tracking  
-Owner: LiuNengBoy  
+Status: Public planning draft
+Owner: LiuNengBoy
 Last updated: 2026-05-13
 
 ## 1. Objective
@@ -168,6 +168,40 @@ Comparison dimensions:
 
 ## 4. Technical Plan for Tempo StablePay
 
+### Feasibility Assessment
+
+This project should be feasible as a local-first demo because the v1 scope uses Tempo's existing TIP-20 primitives rather than custom payment contracts.
+
+High-confidence components:
+
+- Creating invoices in local application state.
+- Encoding invoice references into `bytes32` memos.
+- Sending TIP-20 payments with `transferWithMemo`.
+- Watching `TransferWithMemo` logs for reconciliation.
+- Displaying explorer links and transaction receipts.
+
+Medium-confidence components:
+
+- Fee sponsorship through the public testnet sponsor service.
+- Wallet compatibility across injected browser wallets.
+- Mainnet-compatible examples, because some public docs still contain testnet-specific language.
+
+Defer until the core payment loop is stable:
+
+- Stablecoin DEX routing.
+- Agentic payments.
+- Passkey account onboarding.
+- Custom fee payer infrastructure.
+- Persistent production backend.
+
+Build readiness checklist:
+
+- Confirm current Tempo docs and examples still compile.
+- Confirm Moderato faucet and RPC are online.
+- Confirm the selected TIP-20 token address works with `transferWithMemo`.
+- Confirm event logs can be filtered by memo and recipient.
+- Confirm the demo can be explained without token or airdrop assumptions.
+
 ### Stack
 
 Recommended:
@@ -300,19 +334,28 @@ Must include:
 
 ## 6. Tooling and Work Allocation
 
-### Planning and implementation
+### Development Workflow
+
+Use a public-facing, builder-first workflow:
+
+- Keep commits and docs written from the project perspective.
+- Avoid references to internal tooling, automation, or private working context.
+- Keep implementation notes focused on product decisions, protocol behavior, and reproducible steps.
+- Treat all public claims about Tempo and Arc as source-backed and date-sensitive.
+
+### Primary Implementation
 
 Use for:
 
-- Architecture planning.
+- Architecture refinement.
 - Repository setup.
-- Implementation.
+- Core implementation.
 - Debugging.
 - Documentation.
 - Research synthesis.
-- Final article drafting.
+- Article drafting.
 
-### Review and code assistance
+### Second-Pass Review
 
 Use for:
 
@@ -321,6 +364,15 @@ Use for:
 - Refactoring.
 - Small UI iterations.
 - Test suggestions.
+- Independent review of implementation assumptions and edge cases.
+
+Review checklist:
+
+- Validate protocol assumptions.
+- Catch wallet and network configuration mistakes.
+- Review event filtering and memo encoding.
+- Review user-facing language for public repo quality.
+- Check that no private keys, tokens, local paths, or internal notes are committed.
 
 ### VPS
 
@@ -487,12 +539,39 @@ The plan is successful if it produces:
 - A coherent follow-up path into Arc.
 - A differentiated public profile as a stablecoin payment infra builder.
 
-## 10. Current Blockers
+## 10. Public Repository Hygiene
 
-- GitHub remote is not configured in the local repository.
-- GitHub CLI is not installed in the current environment.
-- Need either:
-  - a GitHub repository URL to add as `origin`, or
-  - GitHub CLI installation and authentication, or
-  - permission to create a repository through another available GitHub route.
+If this repository becomes public, it should be safe for community members, ecosystem teams, and protocol contributors to inspect.
 
+Do:
+
+- Use neutral project language.
+- Cite official sources for protocol details.
+- Separate official facts from market expectations.
+- Keep testnet private keys out of the repository.
+- Use `.env.example` for required environment variables.
+- Include reproducible setup instructions.
+- Include known limitations and non-production warnings.
+
+Do not:
+
+- Present the project as an airdrop farming guide.
+- Reference internal working tools or private implementation context.
+- Commit generated cache files, local machine artifacts, or secrets.
+- Claim official token, ICO, or airdrop details unless confirmed by official sources.
+- Use mainnet funds in examples unless the code is explicitly hardened for production use.
+
+## 11. Build Gate Before Implementation
+
+Before writing the demo application, complete the following gate:
+
+1. Confirm the current Tempo network details.
+2. Confirm the current recommended SDK path.
+3. Confirm the selected token addresses.
+4. Confirm the exact event ABI for `TransferWithMemo`.
+5. Confirm whether fee sponsorship is stable enough for v1.
+6. Decide Vite vs Next.js.
+7. Decide local JSON vs SQLite for invoice state.
+8. Draft the README structure before code begins.
+
+Once this gate is complete, implementation can proceed in one focused pass, followed by an independent review pass.
