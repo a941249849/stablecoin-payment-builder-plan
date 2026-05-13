@@ -1,7 +1,17 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { formatUnits, isAddress, parseAbiItem, parseUnits, zeroAddress } from 'viem'
-import { useAccount, useConnect, useDisconnect, useReadContracts, useSwitchChain, useWatchContractEvent } from 'wagmi'
+import {
+  useAccount,
+  useConnect,
+  useDisconnect,
+  usePublicClient,
+  useReadContract,
+  useReadContracts,
+  useSwitchChain,
+  useWatchContractEvent,
+} from 'wagmi'
 import { Hooks } from 'wagmi/tempo'
+import { Abis, Addresses } from 'viem/tempo'
 import { Language } from './copy'
 import { createInvoice, Invoice, loadInvoices, saveInvoices } from './invoices'
 import { decodeMemo, encodeMemo } from './memo'
@@ -78,6 +88,16 @@ const copy = {
     paymentError: '发送失败',
     policyError:
       '发送失败：Tempo 的 TIP-20 转账会经过 TIP-403 授权检查。请确认收款地址不是零地址、优先使用当前钱包地址，并确认钱包已在 Tempo Testnet；如果仍返回 403，记录为测试网策略/RPC 拒绝证据。',
+    policyTitle: 'TIP-403 转账预检',
+    policyIdle: '连接钱包并填写收款地址后，会在发送前检查付款方和收款方是否允许转账。',
+    policyChecking: '正在读取当前稳定币的 transferPolicyId 与地址授权状态...',
+    policyAllowed: '预检通过：付款方和收款方均允许转账。',
+    policySenderBlocked: '付款钱包未通过该稳定币的 TIP-403 policy，不能发起这笔转账。',
+    policyRecipientBlocked: '收款地址未通过该稳定币的 TIP-403 policy，请换成已领水/已授权的钱包地址。',
+    policyUnavailable: '暂时无法读取 TIP-403 预检，请确认钱包在 Tempo Testnet 后重试。',
+    rpcSubmitError:
+      '链上 policy 预检与模拟调用已通过；这次 403 来自钱包/RPC 提交流程。请优先用 Tempo Wallet 或刷新网络后重试，仍失败则记录为当前测试网提交策略拒绝证据。',
+    policyId: 'Policy ID',
     switchSuccess: '已切换到 Tempo Testnet。',
     switchError: '网络切换失败，请在钱包中手动添加 Tempo Testnet。',
     invalidRecipient: '收款地址不可用。请使用有效地址，不能是 0x000...000。',
@@ -131,6 +151,16 @@ const copy = {
     paymentError: 'Send failed',
     policyError:
       'Send failed: Tempo TIP-20 transfers run through TIP-403 authorization checks. Use a valid non-zero recipient, prefer the connected wallet address, and confirm the wallet is on Tempo Testnet. If 403 persists, record it as testnet policy/RPC rejection evidence.',
+    policyTitle: 'TIP-403 transfer preflight',
+    policyIdle: 'Connect a wallet and enter a recipient to check whether sender and recipient can transfer before sending.',
+    policyChecking: 'Reading the stablecoin transferPolicyId and address authorization state...',
+    policyAllowed: 'Preflight passed: sender and recipient are both authorized.',
+    policySenderBlocked: 'The payer wallet is not authorized by this stablecoin TIP-403 policy.',
+    policyRecipientBlocked: 'The recipient is not authorized by this stablecoin TIP-403 policy. Use a funded or authorized wallet address.',
+    policyUnavailable: 'TIP-403 preflight is temporarily unavailable. Confirm Tempo Testnet and try again.',
+    rpcSubmitError:
+      'Onchain policy preflight and simulation passed; this 403 came from the wallet/RPC submission path. Prefer Tempo Wallet or refresh the network and retry. If it persists, record it as testnet submission policy rejection evidence.',
+    policyId: 'Policy ID',
     switchSuccess: 'Switched to Tempo Testnet.',
     switchError: 'Network switch failed. Add Tempo Testnet manually in the wallet.',
     invalidRecipient: 'Recipient is not usable. Use a valid non-zero address.',
@@ -150,6 +180,7 @@ export function App() {
   const [faucetStatus, setFaucetStatus] = useState<FaucetStatus>('idle')
   const [actionState, setActionState] = useState<ActionState>()
   const { address, chainId, isConnected } = useAccount()
+  const publicClient = usePublicClient({ chainId: tempoChainId })
   const { connectors, connect, isPending: isConnecting } = useConnect()
   const { disconnect } = useDisconnect()
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain()
@@ -169,6 +200,9 @@ export function App() {
     [invoices, selectedInvoiceId],
   )
   const selectedInvoiceToken = selectedInvoice ? findStableToken(selectedInvoice.token) : selectedPaymentToken
+  const policyToken = selectedInvoice ? selectedInvoiceToken : selectedPaymentToken
+  const policyRecipient = selectedInvoice?.recipient ?? recipient
+  const policyRecipientIsValid = isUsableAddress(policyRecipient)
   const balanceContracts = useMemo(
     () =>
       stableTokens.map((token) => ({
@@ -188,6 +222,43 @@ export function App() {
       staleTime: 30_000,
     },
   })
+  const transferPolicy = useReadContract({
+    address: policyToken.address,
+    abi: Abis.tip20,
+    functionName: 'transferPolicyId',
+    chainId: tempoChainId,
+    query: {
+      enabled: Boolean(address && policyRecipientIsValid),
+      refetchOnWindowFocus: false,
+      staleTime: 30_000,
+    },
+  })
+  const policyAuthorization = useReadContracts({
+    contracts:
+      address && policyRecipientIsValid && transferPolicy.data !== undefined
+        ? [
+            {
+              address: Addresses.tip403Registry,
+              abi: Abis.tip403Registry,
+              functionName: 'isAuthorized',
+              args: [transferPolicy.data, address],
+              chainId: tempoChainId,
+            },
+            {
+              address: Addresses.tip403Registry,
+              abi: Abis.tip403Registry,
+              functionName: 'isAuthorized',
+              args: [transferPolicy.data, policyRecipient],
+              chainId: tempoChainId,
+            },
+          ]
+        : [],
+    query: {
+      enabled: Boolean(address && policyRecipientIsValid && transferPolicy.data !== undefined),
+      refetchOnWindowFocus: false,
+      staleTime: 30_000,
+    },
+  })
   const t = copy[language]
   const isTempoNetwork = chainId === tempoChainId
   const recipientIsValid = isUsableAddress(recipient)
@@ -201,6 +272,14 @@ export function App() {
     return Object.fromEntries(entries) as Record<string, bigint | undefined>
   }, [balances.data])
   const selectedBalance = balanceByToken[selectedPaymentToken.address.toLowerCase()]
+  const policyState = getPolicyState(
+    address,
+    policyRecipientIsValid,
+    transferPolicy.isLoading || policyAuthorization.isLoading,
+    transferPolicy.data,
+    policyAuthorization.data,
+    t,
+  )
 
   useEffect(() => {
     if (address && !recipientTouched && (!recipient || recipient === zeroAddress)) {
@@ -266,7 +345,7 @@ export function App() {
     setActionState(undefined)
   }
 
-  function sendInvoice(invoice: Invoice) {
+  async function sendInvoice(invoice: Invoice) {
     if (!isConnected) return
     if (!isUsableAddress(invoice.recipient)) {
       setActionState({ tone: 'error', text: t.invalidInvoice })
@@ -276,8 +355,29 @@ export function App() {
       void switchToTempo()
       return
     }
+    if (!publicClient || !address) {
+      setActionState({ tone: 'error', text: t.policyUnavailable })
+      return
+    }
 
     const invoiceToken = findStableToken(invoice.token)
+    const preflight = await readPolicyPreflight(publicClient, invoice.token, address, invoice.recipient)
+    if (preflight.status !== 'ok') {
+      setActionState({ tone: 'error', text: t.policyUnavailable })
+      return
+    }
+    if (!preflight.senderAllowed) {
+      setActionState({ tone: 'error', text: `${t.policySenderBlocked} ${t.policyId}: ${preflight.policyId.toString()}` })
+      return
+    }
+    if (!preflight.recipientAllowed) {
+      setActionState({
+        tone: 'error',
+        text: `${t.policyRecipientBlocked} ${t.policyId}: ${preflight.policyId.toString()}`,
+      })
+      return
+    }
+
     setActionState({ tone: 'neutral', text: t.walletConfirm })
 
     transfer.mutate(
@@ -305,7 +405,7 @@ export function App() {
           setActionState({ tone: 'success', text: t.paymentSent })
         },
         onError: (error) => {
-          setActionState({ tone: 'error', text: formatTransferError(error, t.paymentError, t.policyError) })
+          setActionState({ tone: 'error', text: formatTransferError(error, t.paymentError, t.rpcSubmitError) })
         },
       },
     )
@@ -539,6 +639,10 @@ export function App() {
               )}
             </div>
             {isConnected && !isTempoNetwork ? <p className="fieldHint">{t.wrongNetwork}</p> : null}
+            <div className={`policyPanel ${policyState.tone}`}>
+              <span>{t.policyTitle}</span>
+              <p>{policyState.text}</p>
+            </div>
           </section>
 
           <section className="panel wide">
@@ -568,7 +672,7 @@ export function App() {
                   key={invoice.id}
                   onSelect={() => setSelectedInvoiceId(invoice.id)}
                   onDelete={() => deleteInvoice(invoice.id)}
-                  onSend={() => sendInvoice(invoice)}
+                  onSend={() => void sendInvoice(invoice)}
                   deleteLabel={t.delete}
                   receiptLabel={t.receipt}
                   sendLabel={t.send}
@@ -580,6 +684,67 @@ export function App() {
       </section>
     </main>
   )
+}
+
+type PolicyCopy = (typeof copy)['zh'] | (typeof copy)['en']
+type PolicyAuthorizationResult = readonly { result?: unknown; status: 'success' | 'failure' }[]
+
+function getPolicyState(
+  address: string | undefined,
+  recipientIsValid: boolean,
+  isLoading: boolean,
+  policyId: bigint | undefined,
+  authorization: PolicyAuthorizationResult | undefined,
+  t: PolicyCopy,
+) {
+  if (!address || !recipientIsValid) return { tone: 'neutral' as const, text: t.policyIdle }
+  if (isLoading || policyId === undefined) return { tone: 'neutral' as const, text: t.policyChecking }
+
+  const senderAllowed = authorization?.[0]?.status === 'success' ? Boolean(authorization[0].result) : undefined
+  const recipientAllowed = authorization?.[1]?.status === 'success' ? Boolean(authorization[1].result) : undefined
+  if (senderAllowed === undefined || recipientAllowed === undefined) {
+    return { tone: 'error' as const, text: `${t.policyUnavailable} ${t.policyId}: ${policyId.toString()}` }
+  }
+  if (!senderAllowed) return { tone: 'error' as const, text: `${t.policySenderBlocked} ${t.policyId}: ${policyId.toString()}` }
+  if (!recipientAllowed) return { tone: 'error' as const, text: `${t.policyRecipientBlocked} ${t.policyId}: ${policyId.toString()}` }
+  return { tone: 'success' as const, text: `${t.policyAllowed} ${t.policyId}: ${policyId.toString()}` }
+}
+
+async function readPolicyPreflight(
+  publicClient: NonNullable<ReturnType<typeof usePublicClient>>,
+  token: `0x${string}`,
+  sender: `0x${string}`,
+  recipient: `0x${string}`,
+) {
+  try {
+    const policyId = await publicClient.readContract({
+      address: token,
+      abi: Abis.tip20,
+      functionName: 'transferPolicyId',
+    })
+    const [senderAllowed, recipientAllowed] = await Promise.all([
+      publicClient.readContract({
+        address: Addresses.tip403Registry,
+        abi: Abis.tip403Registry,
+        functionName: 'isAuthorized',
+        args: [policyId, sender],
+      }),
+      publicClient.readContract({
+        address: Addresses.tip403Registry,
+        abi: Abis.tip403Registry,
+        functionName: 'isAuthorized',
+        args: [policyId, recipient],
+      }),
+    ])
+    return {
+      status: 'ok' as const,
+      policyId,
+      recipientAllowed: Boolean(recipientAllowed),
+      senderAllowed: Boolean(senderAllowed),
+    }
+  } catch {
+    return { status: 'error' as const }
+  }
 }
 
 function InvoiceRow({

@@ -242,7 +242,7 @@ h3 {
 
 .canvasHeader,
 .canvasBoard,
-.stageControls,
+.flowSteps,
 .stageCopy {
   position: relative;
   z-index: 1;
@@ -286,14 +286,6 @@ h3 {
   line-height: 1.4;
 }
 
-.canvasReset {
-  background: rgba(255, 255, 255, 0.72);
-  color: #17201b;
-  min-height: 38px;
-  min-width: 64px;
-  white-space: nowrap;
-}
-
 .canvasBoard {
   min-height: 320px;
   position: relative;
@@ -311,7 +303,7 @@ h3 {
   box-shadow: 0 18px 40px rgba(23, 32, 27, 0.09);
   display: grid;
   gap: 8px;
-  min-width: 160px;
+  min-width: 150px;
   padding: 14px;
   position: absolute;
   z-index: 2;
@@ -323,23 +315,26 @@ h3 {
 }
 
 .entityCard b {
-  font-size: 22px;
+  font-size: 20px;
+  line-height: 1.05;
 }
 
 .businessCard {
   left: 3%;
-  top: 22%;
+  min-width: 205px;
+  top: 23%;
 }
 
 .walletCard {
-  left: 35%;
-  top: 42%;
+  left: 34%;
+  min-width: 150px;
+  top: 48%;
 }
 
 .tempoCard {
   background: #070908;
   color: #fff;
-  left: 42%;
+  left: 40%;
   min-width: 190px;
   top: 18%;
 }
@@ -350,7 +345,7 @@ h3 {
 
 .ledgerCard {
   right: 3%;
-  top: 31%;
+  top: 35%;
 }
 
 .rail {
@@ -362,24 +357,24 @@ h3 {
 }
 
 .railOne {
-  left: 25%;
-  top: 38%;
-  transform: rotate(12deg);
-  width: 18%;
+  left: 28%;
+  top: 39%;
+  transform: rotate(15deg);
+  width: 14%;
 }
 
 .railTwo {
-  left: 55%;
-  top: 33%;
-  transform: rotate(4deg);
-  width: 21%;
+  left: 58%;
+  top: 35%;
+  transform: rotate(6deg);
+  width: 18%;
 }
 
 .railThree {
   left: 51%;
-  top: 56%;
-  transform: rotate(16deg);
-  width: 24%;
+  top: 60%;
+  transform: rotate(18deg);
+  width: 25%;
 }
 
 .memoChip {
@@ -388,10 +383,10 @@ h3 {
   color: #fff;
   font-size: 12px;
   font-weight: 800;
-  left: 55%;
+  left: 54%;
   padding: 7px 10px;
   position: absolute;
-  top: 58%;
+  top: 57%;
   z-index: 3;
 }
 
@@ -413,32 +408,34 @@ h3 {
   z-index: 4;
 }
 
-.stageControls {
+.flowSteps {
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.stageButton {
+.flowStep {
+  align-items: center;
   background: rgba(255, 255, 255, 0.72);
+  border: 1px solid #ddd7ca;
+  border-radius: 6px;
   color: #17201b;
-  justify-content: start;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 8px;
+  justify-content: flex-start;
   min-height: 46px;
+  padding: 0 10px;
 }
 
-.stageButton.active {
-  background: #17201b;
-  color: #fff;
-}
-
-.stageButton span {
+.flowStep span {
   align-items: center;
   border: 1px solid currentColor;
   border-radius: 999px;
   display: inline-flex;
   height: 22px;
   justify-content: center;
-  margin-right: 8px;
   width: 22px;
 }
 
@@ -450,27 +447,6 @@ h3 {
   font-size: 14px;
   line-height: 1.5;
   padding: 12px 14px;
-}
-
-.canvasBoard.stage0 .walletCard,
-.canvasBoard.stage0 .tempoCard,
-.canvasBoard.stage0 .ledgerCard,
-.canvasBoard.stage0 .rail,
-.canvasBoard.stage0 .memoChip {
-  opacity: 0.34;
-}
-
-.canvasBoard.stage1 .tempoCard,
-.canvasBoard.stage1 .ledgerCard,
-.canvasBoard.stage1 .railTwo,
-.canvasBoard.stage1 .railThree,
-.canvasBoard.stage1 .memoChip {
-  opacity: 0.42;
-}
-
-.canvasBoard.stage2 .ledgerCard,
-.canvasBoard.stage2 .railThree {
-  opacity: 0.52;
 }
 
 /* remove legacy flow-card rules */
@@ -497,32 +473,6 @@ h3 {
 
 .flowPulse {
   display: none;
-}
-
-@media (min-width: 841px) {
-  .canvasBoard.stage0 .movingTx {
-    animation: none;
-    left: 24%;
-    top: 35%;
-  }
-
-  .canvasBoard.stage1 .movingTx {
-    animation: none;
-    left: 39%;
-    top: 46%;
-  }
-
-  .canvasBoard.stage2 .movingTx {
-    animation: none;
-    left: 56%;
-    top: 26%;
-  }
-
-  .canvasBoard.stage3 .movingTx {
-    animation: none;
-    left: 80%;
-    top: 38%;
-  }
 }
 
 .walletPanel {
@@ -651,6 +601,41 @@ h3 {
   justify-content: space-between;
   margin-top: 18px;
   padding: 14px;
+}
+
+.policyPanel {
+  border-radius: 6px;
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 12px;
+}
+
+.policyPanel span {
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.policyPanel p {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.policyPanel.neutral {
+  background: #e8eef6;
+  color: #355170;
+}
+
+.policyPanel.success {
+  background: #e4eee5;
+  color: #2f7d51;
+}
+
+.policyPanel.error {
+  background: #f9e2df;
+  color: #9b3d35;
 }
 
 .balance span,
@@ -826,7 +811,7 @@ h3 {
   }
 
   .canvasHeader,
-  .stageControls {
+  .flowSteps {
     display: grid;
     grid-template-columns: 1fr;
   }
