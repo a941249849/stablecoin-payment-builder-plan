@@ -1,6 +1,6 @@
 {
   "buildCommand": "npm --workspace apps/tempo-stablepay run build",
-  "installCommand": "npm install",
+  "installCommand": "npm install --legacy-peer-deps",
   "outputDirectory": "apps/tempo-stablepay/dist",
   "framework": "vite"
 }

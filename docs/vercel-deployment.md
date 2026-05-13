@@ -11,7 +11,7 @@ Recommended Vercel settings:
 | Setting | Value |
 | --- | --- |
 | Framework Preset | Vite |
-| Install Command | `npm install` |
+| Install Command | `npm install --legacy-peer-deps` |
 | Build Command | `npm --workspace apps/tempo-stablepay run build` |
 | Output Directory | `apps/tempo-stablepay/dist` |
 
