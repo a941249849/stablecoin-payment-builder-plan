@@ -19,7 +19,7 @@ import { PaymentNetwork } from './PaymentNetwork'
 import {
   defaultPaymentToken,
   docsUrl,
-  explorerBaseUrl,
+  explorerReceiptUrl,
   faucetApiUrl,
   faucetUrl,
   feeTokens,
@@ -857,7 +857,7 @@ function InvoiceRow({
           {isConnected && !isTempoNetwork ? switchLabel : sendLabel}
         </button>
         {invoice.txHash ? (
-          <a href={`${explorerBaseUrl}/tx/${invoice.txHash}`} target="_blank" rel="noreferrer">
+          <a href={explorerReceiptUrl(invoice.txHash)} target="_blank" rel="noreferrer">
             {receiptLabel}
           </a>
         ) : null}

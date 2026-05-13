@@ -40,6 +40,7 @@ export function findStableToken(address: `0x${string}`) {
 
 export const tempoExplorerUrl = 'https://explore.tempo.xyz'
 export const explorerBaseUrl = tempoExplorerUrl
+export const explorerReceiptUrl = (txHash: `0x${string}`) => `${tempoExplorerUrl}/receipt/${txHash}`
 export const faucetUrl = 'https://docs.tempo.xyz/quickstart/faucet'
 export const faucetApiUrl = 'https://docs.tempo.xyz/api/faucet'
 export const docsUrl = 'https://docs.tempo.xyz'
