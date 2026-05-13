@@ -1,0 +1,11 @@
+{
+  "name": "stablecoin-payment-builder-plan",
+  "private": true,
+  "packageManager": "pnpm@10.23.0",
+  "scripts": {
+    "dev": "pnpm --dir apps/tempo-stablepay dev",
+    "build": "pnpm --dir apps/tempo-stablepay build",
+    "typecheck": "pnpm --dir apps/tempo-stablepay typecheck",
+    "preview": "pnpm --dir apps/tempo-stablepay preview"
+  }
+}

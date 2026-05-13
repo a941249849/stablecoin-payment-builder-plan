@@ -1,0 +1,27 @@
+{
+  "name": "tempo-stablepay",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5",
+    "react": "^19",
+    "react-dom": "^19",
+    "tempo.ts": "~0.14.0",
+    "viem": "^2",
+    "wagmi": "^3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "~5.9.3",
+    "vite": "^7"
+  }
+}
