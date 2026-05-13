@@ -13,7 +13,7 @@ const transferWithMemoEvent = parseAbiItem(
 export function App() {
   const [recipient, setRecipient] = useState<`0x${string}`>('0x0000000000000000000000000000000000000000')
   const [amount, setAmount] = useState('100')
-  const [feeToken, setFeeToken] = useState(paymentToken.address)
+  const [feeToken, setFeeToken] = useState<`0x${string}`>(paymentToken.address)
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>()
   const { address, chainId, isConnected } = useAccount()
@@ -41,7 +41,8 @@ export function App() {
 
   useWatchContractEvent({
     address: paymentToken.address,
-    event: transferWithMemoEvent,
+    abi: [transferWithMemoEvent],
+    eventName: 'TransferWithMemo',
     args: selectedInvoice
       ? {
           to: selectedInvoice.recipient,
@@ -64,7 +65,7 @@ export function App() {
           return {
             ...invoice,
             status: 'paid',
-            txHash: match.transactionHash,
+            txHash: match.transactionHash ?? undefined,
             matchedAt: new Date().toISOString(),
           }
         }),
