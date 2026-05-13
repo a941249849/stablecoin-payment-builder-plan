@@ -563,15 +563,18 @@ Do not:
 
 ## 11. Build Gate Before Implementation
 
-Before writing the demo application, complete the following gate:
+The Tempo implementation gate is tracked in [Tempo Build Gate](./tempo-build-gate.md).
 
-1. Confirm the current Tempo network details.
-2. Confirm the current recommended SDK path.
-3. Confirm the selected token addresses.
-4. Confirm the exact event ABI for `TransferWithMemo`.
-5. Confirm whether fee sponsorship is stable enough for v1.
-6. Decide Vite vs Next.js.
-7. Decide local JSON vs SQLite for invoice state.
-8. Draft the README structure before code begins.
+Current decisions:
 
-Once this gate is complete, implementation can proceed in one focused pass, followed by an independent review pass.
+1. Use Tempo Testnet (Moderato) for v1.
+2. Use Vite, React, TypeScript, Wagmi, Viem, `tempo.ts`, and TanStack Query.
+3. Use AlphaUSD as the default payment token.
+4. Use PathUSD, AlphaUSD, and BetaUSD as initial fee-token options.
+5. Use TIP-20 `transferWithMemo(address,uint256,bytes32)` for invoice references.
+6. Reconcile with `TransferWithMemo` logs.
+7. Store invoices locally in the browser for v1.
+8. Keep fee sponsorship optional until a live sponsored test transaction succeeds.
+9. Avoid custom contracts, mainnet funds, backend infrastructure, and token/airdrop claims in v1.
+
+Implementation can proceed after one final live test of the faucet, a self-paid memo transfer, and log decoding against the resulting transaction.

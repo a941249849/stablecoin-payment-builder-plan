@@ -5,6 +5,7 @@ This repository tracks a builder-oriented research and implementation plan for s
 Start with:
 
 - [Tempo and Arc Stablecoin Payment Builder Plan](docs/tempo-arc-builder-plan.md)
+- [Tempo Build Gate](docs/tempo-build-gate.md)
 
 Primary near-term focus:
 
