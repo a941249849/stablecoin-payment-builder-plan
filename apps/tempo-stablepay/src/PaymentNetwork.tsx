@@ -1,51 +1,65 @@
-const networkNodes = [
-  { label: 'Invoice', x: '13%', y: '52%', delay: '0s' },
-  { label: 'Wallet', x: '31%', y: '30%', delay: '0.25s' },
-  { label: 'TIP-20', x: '48%', y: '57%', delay: '0.5s' },
-  { label: 'Fee token', x: '66%', y: '35%', delay: '0.75s' },
-  { label: 'Memo event', x: '83%', y: '55%', delay: '1s' },
-]
-
-const rails = [
-  { width: '22%', left: '16%', top: '44%', rotate: '-16deg', delay: '0s' },
-  { width: '23%', left: '34%', top: '45%', rotate: '17deg', delay: '0.4s' },
-  { width: '24%', left: '51%', top: '46%', rotate: '-14deg', delay: '0.8s' },
-  { width: '23%', left: '67%', top: '45%', rotate: '13deg', delay: '1.2s' },
+const flowSteps = [
+  {
+    label: '1',
+    title: 'Invoice intent',
+    body: 'Amount, recipient, selected stablecoin, and invoice ID become a payment instruction.',
+    meta: 'Off-chain order',
+  },
+  {
+    label: '2',
+    title: 'Wallet signs',
+    body: 'Tempo-compatible wallet signs one stablecoin-native transaction on Moderato.',
+    meta: 'Tempo tx',
+  },
+  {
+    label: '3',
+    title: 'TIP-20 memo',
+    body: 'transferWithMemo writes a bytes32 invoice reference into the token transfer.',
+    meta: 'Payment metadata',
+  },
+  {
+    label: '4',
+    title: 'Fee path',
+    body: 'Fee token or sponsorship is resolved by transaction, account, contract, or fallback rules.',
+    meta: 'Stablecoin gas',
+  },
+  {
+    label: '5',
+    title: 'Reconciliation',
+    body: 'TransferWithMemo logs are matched by token, recipient, and memo to close the invoice.',
+    meta: 'Auto accounting',
+  },
 ]
 
 export function PaymentNetwork() {
   return (
-    <div className="paymentNetwork" aria-hidden="true">
-      <div className="networkBackdrop" />
-      {rails.map((rail) => (
-        <span
-          className="networkRail"
-          key={`${rail.left}-${rail.top}`}
-          style={{
-            animationDelay: rail.delay,
-            left: rail.left,
-            top: rail.top,
-            transform: `rotate(${rail.rotate})`,
-            width: rail.width,
-          }}
-        />
-      ))}
-      {networkNodes.map((node) => (
-        <span
-          className="networkNode"
-          key={node.label}
-          style={{
-            animationDelay: node.delay,
-            left: node.x,
-            top: node.y,
-          }}
-        >
-          <span className="nodePulse" />
-          <span className="nodeLabel">{node.label}</span>
-        </span>
-      ))}
-      <span className="networkPacket packetOne" />
-      <span className="networkPacket packetTwo" />
+    <div className="paymentNetwork">
+      <div className="flowHeader">
+        <span>Tempo payment path</span>
+        <strong>Invoice to stablecoin tx to memo event to accounting</strong>
+      </div>
+      <div className="flowLane" aria-label="Tempo payment flow">
+        {flowSteps.map((step, index) => (
+          <div className="flowStep" key={step.title}>
+            <div className="stepMarker">
+              <span>{step.label}</span>
+              {index < flowSteps.length - 1 ? <i /> : null}
+            </div>
+            <div>
+              <p className="stepMeta">{step.meta}</p>
+              <h3>{step.title}</h3>
+              <p>{step.body}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flowSettlement">
+        <span>payer wallet</span>
+        <strong>Tempo Moderato</strong>
+        <span>merchant ledger</span>
+      </div>
+      <span className="flowPulse pulseOne" />
+      <span className="flowPulse pulseTwo" />
     </div>
   )
 }

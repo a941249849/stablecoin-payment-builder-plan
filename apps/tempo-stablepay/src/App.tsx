@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { formatUnits, isAddress, parseAbiItem, parseUnits } from 'viem'
-import { useAccount, useConnect, useDisconnect, useSwitchChain, useWatchContractEvent } from 'wagmi'
+import { formatUnits, isAddress, parseAbiItem, parseUnits, zeroAddress } from 'viem'
+import { useAccount, useConnect, useDisconnect, useReadContract, useSwitchChain, useWatchContractEvent } from 'wagmi'
 import { Hooks } from 'wagmi/tempo'
 import { createInvoice, Invoice, loadInvoices, saveInvoices } from './invoices'
 import { decodeMemo, encodeMemo } from './memo'
@@ -21,6 +21,7 @@ import {
 const transferWithMemoEvent = parseAbiItem(
   'event TransferWithMemo(address indexed from, address indexed to, uint256 value, bytes32 indexed memo)',
 )
+const balanceOfAbi = [parseAbiItem('function balanceOf(address account) view returns (uint256)')]
 
 type Language = 'zh' | 'en'
 type FaucetStatus = 'idle' | 'pending' | 'success' | 'error'
@@ -44,6 +45,7 @@ const copy = {
     invoice: '发票',
     paymentToken: '付款代币',
     recipient: '收款地址',
+    useWallet: '使用当前钱包',
     amount: '金额',
     feeToken: '手续费代币',
     create: '创建发票',
@@ -71,6 +73,8 @@ const copy = {
     paymentError: '发送失败',
     switchSuccess: '已切换到 Tempo Testnet。',
     switchError: '网络切换失败，请在钱包中手动添加 Tempo Testnet。',
+    invalidRecipient: '收款地址不可用。请使用有效地址，不能是 0x000...000。',
+    invalidInvoice: '这张发票的收款地址无效，请重新创建。',
   },
   en: {
     network: 'Tempo Testnet',
@@ -87,6 +91,7 @@ const copy = {
     invoice: 'Invoice',
     paymentToken: 'Payment token',
     recipient: 'Recipient',
+    useWallet: 'Use current wallet',
     amount: 'Amount',
     feeToken: 'Fee token',
     create: 'Create invoice',
@@ -114,6 +119,8 @@ const copy = {
     paymentError: 'Send failed',
     switchSuccess: 'Switched to Tempo Testnet.',
     switchError: 'Network switch failed. Add Tempo Testnet manually in the wallet.',
+    invalidRecipient: 'Recipient is not usable. Use a valid non-zero address.',
+    invalidInvoice: 'This invoice has an invalid recipient. Create a new one.',
   },
 } as const
 
@@ -147,20 +154,31 @@ export function App() {
     [invoices, selectedInvoiceId],
   )
   const selectedInvoiceToken = selectedInvoice ? findStableToken(selectedInvoice.token) : selectedPaymentToken
-  const balance = Hooks.token.useGetBalance({
-    account: address,
-    token: selectedPaymentToken.address,
+  const balance = useReadContract({
+    address: selectedPaymentToken.address,
+    abi: balanceOfAbi,
+    functionName: 'balanceOf',
+    chainId: tempoChainId,
+    args: address ? [address] : undefined,
     query: {
+      enabled: Boolean(address),
       refetchInterval: isConnected ? 4_000 : false,
       staleTime: 0,
     },
   })
   const t = copy[language]
   const isTempoNetwork = chainId === tempoChainId
+  const recipientIsValid = isUsableAddress(recipient)
 
   useEffect(() => {
     if (address) void balance.refetch()
   }, [address, selectedPaymentToken.address])
+
+  useEffect(() => {
+    if (address && !isUsableAddress(recipient)) {
+      setRecipient(address)
+    }
+  }, [address, recipient])
 
   useWatchContractEvent({
     address: selectedInvoiceToken.address,
@@ -200,7 +218,10 @@ export function App() {
 
   function addInvoice(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!isAddress(recipient)) return
+    if (!recipientIsValid) {
+      setActionState({ tone: 'error', text: t.invalidRecipient })
+      return
+    }
     if (!amount || Number(amount) <= 0) return
 
     const id = `INV-${Date.now().toString(36).toUpperCase()}`
@@ -219,6 +240,10 @@ export function App() {
 
   function sendInvoice(invoice: Invoice) {
     if (!isConnected) return
+    if (!isUsableAddress(invoice.recipient)) {
+      setActionState({ tone: 'error', text: t.invalidInvoice })
+      return
+    }
     if (!isTempoNetwork) {
       void switchToTempo()
       return
@@ -406,8 +431,14 @@ export function App() {
               </label>
               <label>
                 {t.recipient}
-                <input value={recipient} onChange={(event) => setRecipient(event.target.value as `0x${string}`)} />
+                <div className="recipientControl">
+                  <input value={recipient} onChange={(event) => setRecipient(event.target.value as `0x${string}`)} />
+                  <button type="button" className="secondary" disabled={!address} onClick={() => address && setRecipient(address)}>
+                    {t.useWallet}
+                  </button>
+                </div>
               </label>
+              {!recipientIsValid ? <p className="fieldHint error">{t.invalidRecipient}</p> : null}
               <label>
                 {t.amount}
                 <input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} />
@@ -422,7 +453,9 @@ export function App() {
                   ))}
                 </select>
               </label>
-              <button type="submit">{t.create}</button>
+              <button type="submit" disabled={!recipientIsValid}>
+                {t.create}
+              </button>
             </form>
 
             <div className="balance">
@@ -455,6 +488,7 @@ export function App() {
                   isTempoNetwork={isTempoNetwork}
                   isPending={transfer.isPending}
                   isSwitching={isSwitching}
+                  invalidLabel={t.invalidInvoice}
                   key={invoice.id}
                   onSelect={() => setSelectedInvoiceId(invoice.id)}
                   onSend={() => sendInvoice(invoice)}
@@ -477,6 +511,7 @@ function InvoiceRow({
   isTempoNetwork,
   isPending,
   isSwitching,
+  invalidLabel,
   onSelect,
   onSend,
   receiptLabel,
@@ -488,18 +523,20 @@ function InvoiceRow({
   isTempoNetwork: boolean
   isPending: boolean
   isSwitching: boolean
+  invalidLabel: string
   onSelect: () => void
   onSend: () => void
   receiptLabel: string
   sendLabel: string
 }) {
   const token = findStableToken(invoice.token)
+  const invoiceRecipientIsValid = isUsableAddress(invoice.recipient)
 
   return (
     <article className={isActive ? 'invoice active' : 'invoice'} onClick={onSelect}>
       <div>
         <h3>{invoice.id}</h3>
-        <p>{shortAddress(invoice.recipient)}</p>
+        <p>{invoiceRecipientIsValid ? shortAddress(invoice.recipient) : invalidLabel}</p>
       </div>
       <div>
         <strong>
@@ -511,7 +548,7 @@ function InvoiceRow({
       <div className="actions">
         <button
           type="button"
-          disabled={!isConnected || isPending || isSwitching}
+          disabled={!isConnected || isPending || isSwitching || !invoiceRecipientIsValid}
           onClick={(event) => {
             event.stopPropagation()
             onSend()
@@ -532,4 +569,8 @@ function InvoiceRow({
 function shortAddress(value: string | undefined) {
   if (!value) return 'Not connected'
   return `${value.slice(0, 6)}...${value.slice(-4)}`
+}
+
+function isUsableAddress(value: string | undefined): value is `0x${string}` {
+  return Boolean(value && isAddress(value) && value.toLowerCase() !== zeroAddress)
 }
