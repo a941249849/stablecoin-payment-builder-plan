@@ -23,7 +23,7 @@ Start with:
 Current engineering focus:
 
 1. Keep the Vercel deployment green.
-2. Validate wallet connection across Tempo Wallet, OKX Wallet, and MetaMask where available.
+2. Validate wallet connection across Tempo Wallet, OKX Wallet, and MetaMask where available, while separating connection support from actual Tempo transaction submission support.
 3. Validate faucet funding on Tempo Testnet.
 4. Send a self-paid memo transfer with pathUSD, AlphaUSD, BetaUSD, or ThetaUSD.
 5. Confirm `TransferWithMemo` reconciliation from the live transaction.

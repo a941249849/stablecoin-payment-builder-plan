@@ -47,7 +47,8 @@ const copy = {
     subtitle:
       '一个用于验证 Tempo 稳定币支付工作流的测试网 demo：选择 pathUSD、AlphaUSD、BetaUSD 或 ThetaUSD 创建发票，写入 TIP-20 memo，并用 TransferWithMemo 事件完成对账。',
     stack: '基于 Vite、React、Wagmi、Viem 和 tempo.ts 构建。',
-    supportedWallets: '连接入口覆盖 Tempo Wallet，并通过浏览器注入钱包支持 OKX Wallet、MetaMask 等可添加 Tempo 网络的钱包。',
+    supportedWallets:
+      '连接入口覆盖 Tempo Wallet，并通过浏览器注入钱包支持 OKX Wallet、MetaMask 等可添加 Tempo 网络的钱包；实际发送会单独提示钱包是否适合提交 Tempo 稳定币手续费交易。',
     designTitle: '从支付逻辑出发的链',
     designBody:
       'Tempo 的关键不是再做一个通用交易链，而是把稳定币支付需要的低成本、支付元数据、确定性结算和可赞助手续费放到第一层体验里。这个 demo 用发票、memo、事件监听和手续费代币选择去验证这条路径。',
@@ -82,6 +83,13 @@ const copy = {
     connectTitle: '连接钱包',
     connectHint: '如果你安装了 OKX Wallet 或 MetaMask，浏览器注入入口会显示对应钱包名称。',
     noWallet: '未检测到浏览器钱包时，可先使用 Tempo Wallet 或打开官方领水页面填写地址。',
+    walletReadiness: '发送能力',
+    walletReady:
+      'Tempo Wallet 已连接。它是本 demo 的首选发送路径，适合提交 Tempo stablecoin-fee 测试网交易。',
+    walletExperimental:
+      '当前连接的是注入钱包。官方文档允许 EVM 钱包连接或添加 Tempo 网络，但也说明部分钱包尚未支持 Tempo；发送可能在钱包/RPC 提交阶段被拒绝。',
+    walletDisconnected: '连接钱包后再检查是否适合提交 Tempo 支付交易。',
+    allowExperimentalWallet: '我知道这是实验钱包路径，仍尝试提交交易',
     wrongNetwork: '当前钱包不在 Tempo Testnet，请先切换网络。',
     balanceLoading: '读取中...',
     walletConfirm: '请在钱包中确认这笔测试网付款。',
@@ -95,7 +103,10 @@ const copy = {
     policyRecipientBlocked: '收款地址暂时不能接收这类测试币，请换成已领水的钱包地址。',
     policyUnavailable: '暂时无法完成付款检查，请确认钱包已切换到 Tempo Testnet 后重试。',
     rpcSubmitError:
-      '钱包没有完成这笔测试网交易。Tempo 的测试网交易需要钱包和 RPC 支持稳定币手续费；请确认网络为 Tempo Testnet，并优先用 Tempo Wallet 或 OKX Wallet 重新连接后再发送。',
+      '链上 policy 检查通过，但钱包/RPC 没有完成交易提交。Tempo 没有原生 gas，交易费用由 TIP-20 稳定币支付；当前钱包需要支持 Tempo 的 stablecoin-fee / Tempo Transaction 提交流程。请优先使用 Tempo Wallet；如果用 MetaMask/OKX/注入钱包，请把这次失败记录为钱包兼容性证据。',
+    rawError: '原始错误',
+    unsupportedWalletSend:
+      '当前钱包不是首选 Tempo Wallet。为避免把连接成功误判为可发送，本 demo 默认阻止注入钱包直接提交；如需收集兼容性证据，请勾选实验发送后重试。',
     policyId: 'Policy ID',
     switchSuccess: '已切换到 Tempo Testnet。',
     switchError: '网络切换失败，请在钱包中手动添加 Tempo Testnet。',
@@ -109,7 +120,7 @@ const copy = {
       'A testnet demo for validating a Tempo stablecoin payment workflow: choose pathUSD, AlphaUSD, BetaUSD, or ThetaUSD, create an invoice, encode a TIP-20 memo, and reconcile with TransferWithMemo events.',
     stack: 'Built with Vite, React, Wagmi, Viem, and tempo.ts.',
     supportedWallets:
-      'Wallet access includes Tempo Wallet plus injected wallets such as OKX Wallet and MetaMask when they support or can add the Tempo network.',
+      'Wallet access includes Tempo Wallet plus injected wallets such as OKX Wallet and MetaMask when they support or can add the Tempo network; actual send readiness is checked separately for Tempo stablecoin-fee transactions.',
     designTitle: 'A chain shaped around payment logic',
     designBody:
       'Tempo is not just another general trading chain. Its payment thesis is low cost, payment metadata, deterministic settlement, and fee sponsorship as first-layer UX. This demo validates that path through invoices, memos, event listeners, and fee-token selection.',
@@ -144,6 +155,13 @@ const copy = {
     connectTitle: 'Connect wallet',
     connectHint: 'If OKX Wallet or MetaMask is installed, the injected wallet entry should show its wallet name.',
     noWallet: 'If no browser wallet is detected, use Tempo Wallet or open the official faucet page with an address.',
+    walletReadiness: 'Send readiness',
+    walletReady:
+      'Tempo Wallet is connected. It is the preferred send path for this demo and is suitable for Tempo stablecoin-fee testnet transactions.',
+    walletExperimental:
+      'An injected wallet is connected. The official docs allow EVM wallets to connect or add Tempo, but also note that some wallets may not support Tempo yet; sending can fail during wallet/RPC submission.',
+    walletDisconnected: 'Connect a wallet to check whether it is suitable for submitting Tempo payment transactions.',
+    allowExperimentalWallet: 'I understand this is an experimental wallet path and still want to submit',
     wrongNetwork: 'The wallet is not on Tempo Testnet. Switch networks first.',
     balanceLoading: 'Loading...',
     walletConfirm: 'Confirm this testnet payment in your wallet.',
@@ -157,7 +175,10 @@ const copy = {
     policyRecipientBlocked: 'This recipient cannot receive this test token yet. Use a funded wallet address.',
     policyUnavailable: 'Payment check is temporarily unavailable. Confirm Tempo Testnet and try again.',
     rpcSubmitError:
-      'The wallet did not complete this testnet transaction. Tempo testnet transactions need wallet and RPC support for stablecoin fees. Confirm Tempo Testnet, then prefer Tempo Wallet or OKX Wallet and try again.',
+      'Onchain policy checks passed, but the wallet/RPC did not complete transaction submission. Tempo has no native gas token; fees are paid with TIP-20 stablecoins, so the wallet must support Tempo stablecoin-fee / Tempo Transaction submission. Prefer Tempo Wallet. If using MetaMask/OKX/injected wallets, record this failure as wallet-compatibility evidence.',
+    rawError: 'Raw error',
+    unsupportedWalletSend:
+      'The connected wallet is not the preferred Tempo Wallet path. To avoid treating connection as send support, this demo blocks injected-wallet submission by default. Enable experimental sending if you want compatibility evidence.',
     policyId: 'Policy ID',
     switchSuccess: 'Switched to Tempo Testnet.',
     switchError: 'Network switch failed. Add Tempo Testnet manually in the wallet.',
@@ -173,17 +194,19 @@ export function App() {
   const [recipientTouched, setRecipientTouched] = useState(false)
   const [amount, setAmount] = useState('100')
   const [feeToken, setFeeToken] = useState<`0x${string}`>(defaultPaymentToken.address)
+  const [allowExperimentalWallet, setAllowExperimentalWallet] = useState(false)
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string>()
   const [faucetStatus, setFaucetStatus] = useState<FaucetStatus>('idle')
   const [actionState, setActionState] = useState<ActionState>()
-  const { address, chainId, isConnected } = useAccount()
+  const { address, chainId, connector, isConnected } = useAccount()
   const publicClient = usePublicClient({ chainId: tempoChainId })
   const { connectors, connect, isPending: isConnecting } = useConnect()
   const { disconnect } = useDisconnect()
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain()
   const transfer = Hooks.token.useTransferSync()
   const selectedPaymentToken = findStableToken(paymentTokenAddress)
+  const walletReadiness = getWalletReadiness(connector, allowExperimentalWallet, copy[language])
 
   useEffect(() => {
     setInvoices(loadInvoices())
@@ -357,6 +380,10 @@ export function App() {
       setActionState({ tone: 'error', text: t.policyUnavailable })
       return
     }
+    if (!walletReadiness.canSubmit) {
+      setActionState({ tone: 'error', text: t.unsupportedWalletSend })
+      return
+    }
 
     const invoiceToken = findStableToken(invoice.token)
     const preflight = await readPolicyPreflight(publicClient, invoice.token, address, invoice.recipient)
@@ -403,7 +430,7 @@ export function App() {
           setActionState({ tone: 'success', text: t.paymentSent })
         },
         onError: (error) => {
-          setActionState({ tone: 'error', text: formatTransferError(error, t.paymentError, t.rpcSubmitError) })
+          setActionState({ tone: 'error', text: formatTransferError(error, t.paymentError, t.rpcSubmitError, t.rawError) })
         },
       },
     )
@@ -543,6 +570,20 @@ export function App() {
                 </button>
               ))
             )}
+          </div>
+          <div className={`walletReadiness ${walletReadiness.tone}`}>
+            <span>{t.walletReadiness}</span>
+            <p>{walletReadiness.text}</p>
+            {isConnected && !walletReadiness.isTempoWallet ? (
+              <label className="experimentalToggle">
+                <input
+                  checked={allowExperimentalWallet}
+                  onChange={(event) => setAllowExperimentalWallet(event.target.checked)}
+                  type="checkbox"
+                />
+                {t.allowExperimentalWallet}
+              </label>
+            ) : null}
           </div>
           {faucetStatus !== 'idle' ? (
             <p className={`faucetStatus ${faucetStatus}`}>
@@ -838,7 +879,50 @@ function isTip20TokenAddress(value: string) {
   return value.toLowerCase().startsWith('0x20c000000000000000000000')
 }
 
-function formatTransferError(error: Error, fallback: string, policyError: string) {
-  if (/403|PolicyForbids|TIP-403|Non-200 status code/i.test(error.message)) return policyError
+function formatTransferError(error: Error, fallback: string, policyError: string, rawErrorLabel: string) {
+  const message = compactErrorMessage(error.message)
+  if (/403|Non-200 status code|eth_sendTransaction|wallet_sendTransaction|feeToken|fee token/i.test(error.message)) {
+    return `${policyError} ${rawErrorLabel}: ${message}`
+  }
+  if (/PolicyForbids|TIP-403/i.test(error.message)) return `${fallback}: TIP-403 policy rejected this transfer. ${message}`
   return `${fallback}: ${error.message}`
+}
+
+function compactErrorMessage(message: string) {
+  return message.replace(/\s+/g, ' ').slice(0, 420)
+}
+
+function getWalletReadiness(
+  connector: { id?: string; name?: string } | undefined,
+  allowExperimentalWallet: boolean,
+  t: PolicyCopy,
+) {
+  if (!connector) {
+    return {
+      canSubmit: false,
+      isTempoWallet: false,
+      text: t.walletDisconnected,
+      tone: 'neutral' as const,
+    }
+  }
+
+  const id = connector.id?.toLowerCase() ?? ''
+  const name = connector.name?.toLowerCase() ?? ''
+  const isTempoWallet = id === 'xyz.tempo' || name.includes('tempo wallet')
+
+  if (isTempoWallet) {
+    return {
+      canSubmit: true,
+      isTempoWallet,
+      text: t.walletReady,
+      tone: 'success' as const,
+    }
+  }
+
+  return {
+    canSubmit: allowExperimentalWallet,
+    isTempoWallet,
+    text: t.walletExperimental,
+    tone: allowExperimentalWallet ? ('neutral' as const) : ('error' as const),
+  }
 }

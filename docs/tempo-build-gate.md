@@ -37,8 +37,8 @@ Use official testnet token-list entries for the v1 demo.
 | --- | --- | --- | --- | --- |
 | PathUSD | `pathUSD` | `0x20c0000000000000000000000000000000000000` | 6 | payment and fee-token option |
 | AlphaUSD | `alphaUSD` | `0x20c0000000000000000000000000000000000001` | 6 | default payment and fee-token option |
-| BetaUSD | `betaUSD` | `0x20c0000000000000000000000000000000000002` | 6 | payment and fee-token option |
-| ThetaUSD | `thetaUSD` | `0x20c0000000000000000000000000000000000003` | 6 | payment and fee-token option |
+| BetaUSD | `betaUSD` | `0x20c0000000000000000000000000000000000002` | 6 | payment option |
+| ThetaUSD | `thetaUSD` | `0x20c0000000000000000000000000000000000003` | 6 | payment option |
 | USDC.e | `USDC.e` | `0x20c0000000000000000000009e8d7eb59b783726` | 6 | later compatibility check |
 | EURC.e | `EURC.e` | `0x20c000000000000000000000d72572838bbee59c` | 6 | later non-USD UX check |
 
@@ -140,7 +140,7 @@ Build:
 - Faucet/balance visibility if supported cleanly by the SDK.
 - Invoice creation.
 - Stablecoin transfer with memo for PathUSD, AlphaUSD, BetaUSD, and ThetaUSD.
-- Fee token selection among PathUSD, AlphaUSD, BetaUSD, and ThetaUSD.
+- Fee token selection among PathUSD and AlphaUSD until live fee liquidity/support is validated for additional test tokens.
 - Reconciliation by `TransferWithMemo`.
 - Explorer link from transaction hash.
 - README with setup, source links, and verified limitations.

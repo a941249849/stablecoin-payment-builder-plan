@@ -571,7 +571,7 @@ Current decisions:
 1. Use Tempo Testnet (Moderato) for v1.
 2. Use Vite, React, TypeScript, Wagmi, Viem, `tempo.ts`, and TanStack Query.
 3. Support pathUSD, AlphaUSD, BetaUSD, and ThetaUSD as payment-token options.
-4. Support pathUSD, AlphaUSD, BetaUSD, and ThetaUSD as initial fee-token options.
+4. Support pathUSD and AlphaUSD as initial fee-token options, while keeping BetaUSD and ThetaUSD as payment-token options until fee-token support is validated with live transactions.
 5. Use TIP-20 `transferWithMemo(address,uint256,bytes32)` for invoice references.
 6. Reconcile with `TransferWithMemo` logs.
 7. Store invoices locally in the browser for v1.

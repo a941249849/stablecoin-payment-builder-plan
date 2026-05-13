@@ -5,7 +5,7 @@ Tempo StablePay is a testnet payment workflow for invoice-style stablecoin trans
 The v1 demo targets Tempo Testnet (Moderato) and uses TIP-20 memo transfers:
 
 - payment-token options: PathUSD, AlphaUSD, BetaUSD, ThetaUSD
-- fee-token options: PathUSD, AlphaUSD, BetaUSD, ThetaUSD
+- fee-token options: PathUSD and AlphaUSD
 - transfer primitive: `transferWithMemo(address,uint256,bytes32)`
 - reconciliation event: `TransferWithMemo`
 - invoice storage: browser local storage
@@ -45,4 +45,5 @@ apps/tempo-stablepay/dist
 - No backend invoice database.
 - No custom contracts.
 - Fee sponsorship is not enabled until a live sponsored transaction is validated.
+- Tempo Wallet is the preferred send path. Injected wallets may connect or add Tempo Testnet, but transaction submission can still fail if the wallet/RPC path does not support Tempo stablecoin-fee transactions.
 - Explorer URL behavior should be confirmed after the first live transaction.

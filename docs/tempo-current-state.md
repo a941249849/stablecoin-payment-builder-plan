@@ -1,6 +1,6 @@
 # Tempo Current State Review
 
-Last updated: 2026-05-13
+Last updated: 2026-05-14
 
 This note is the source-backed build checkpoint for Tempo StablePay. It separates official facts, builder assumptions, and the next Arc comparison phase.
 
@@ -11,10 +11,10 @@ This note is the source-backed build checkpoint for Tempo StablePay. It separate
 - Tempo Testnet Moderato uses chain ID `42431`, RPC `https://rpc.moderato.tempo.xyz`, WebSocket `wss://rpc.moderato.tempo.xyz`, currency symbol `USD`, and explorer `https://explore.tempo.xyz`.
 - The testnet faucet funds four test stablecoins: `pathUSD`, `AlphaUSD`, `BetaUSD`, and `ThetaUSD`, each at `1M`.
 - The token list endpoint for chain `42431` is the canonical metadata path for testnet assets.
-- The wallet guide supports EVM-compatible browser wallets that support Tempo or can add custom networks, including the `multiInjectedProviderDiscovery: true` Wagmi path and a manual add-network path.
+- The wallet guide supports EVM-compatible browser wallets that support Tempo or can add custom networks, including the `multiInjectedProviderDiscovery: true` Wagmi path and a manual add-network path. The same docs also warn that some wallets may not support Tempo yet, so wallet connection should not be treated as proof that Tempo transaction submission works.
 - `transferWithMemo` attaches a 32-byte memo to a TIP-20 transfer and emits `TransferWithMemo` for reconciliation.
 - The accept-payment guide frames memo reconciliation as watching `TransferWithMemo` events and matching recipient plus memo.
-- Fee selection is protocol-specific: transaction-level fee token has priority, then account preference, then TIP-20 contract inference, then Stablecoin DEX inference, then `pathUSD` fallback. Moderato validators currently expect `alphaUSD`.
+- Fee selection is protocol-specific. Tempo has no native gas token; fees are paid in USD-denominated native TIP-20 stablecoins with sufficient Fee AMM liquidity. The demo currently exposes `pathUSD` and `AlphaUSD` as fee-token options and keeps `BetaUSD` / `ThetaUSD` as payment-token options until fee-token support is validated with live transactions.
 - Tempo publishes a public testnet fee payer service at `https://sponsor.moderato.tempo.xyz` for development, but sponsorship should be validated separately before being presented as a working demo feature.
 - The Tempo GitHub organization is active and public, including `tempo`, `tempo-apps`, `tempo-ts`, `accounts`, `docs`, `mpp`, and related SDK/spec repositories.
 
@@ -34,6 +34,8 @@ The near-term edge is therefore:
 ## Demo Scope Correction
 
 The demo must not be AlphaUSD-only. It should treat `pathUSD`, `AlphaUSD`, `BetaUSD`, and `ThetaUSD` as selectable payment assets, while clearly explaining any fee-token behavior that differs from the visible selector because of SDK, wallet, or protocol rules.
+
+Wallet connection and transaction submission must be tracked separately. Tempo Wallet is the preferred browser send path. Injected wallets such as MetaMask or OKX can be useful for connection and network-add testing, but failures during `eth_sendTransaction` / `wallet_sendTransaction` should be documented as compatibility evidence rather than hidden behind generic policy errors.
 
 The current demo is still in Day 2/Day 3 territory until these are verified:
 

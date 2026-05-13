@@ -671,6 +671,56 @@ h3 {
   color: #9b3d35;
 }
 
+.walletReadiness {
+  border-radius: 6px;
+  display: grid;
+  gap: 8px;
+  grid-column: 1 / -1;
+  padding: 12px;
+}
+
+.walletReadiness span {
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.walletReadiness p {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.walletReadiness.neutral {
+  background: #e8eef6;
+  color: #355170;
+}
+
+.walletReadiness.success {
+  background: #e4eee5;
+  color: #2f7d51;
+}
+
+.walletReadiness.error {
+  background: #f9e2df;
+  color: #9b3d35;
+}
+
+.experimentalToggle {
+  align-items: center;
+  color: inherit;
+  display: flex;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 8px;
+}
+
+.experimentalToggle input {
+  accent-color: #17201b;
+  min-height: auto;
+  width: auto;
+}
+
 .actionState,
 .fieldHint {
   border-radius: 6px;
