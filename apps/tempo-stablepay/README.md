@@ -13,14 +13,14 @@ The v1 demo targets Tempo Testnet (Moderato) and uses TIP-20 memo transfers:
 ## Development
 
 ```sh
-pnpm install
-pnpm dev
+npm install
+npm run dev
 ```
 
 ## Build
 
 ```sh
-pnpm build
+npm run build
 ```
 
 ## Vercel
@@ -28,7 +28,7 @@ pnpm build
 The root `vercel.json` builds this app with:
 
 ```sh
-pnpm --dir apps/tempo-stablepay build
+npm --workspace apps/tempo-stablepay run build
 ```
 
 Output directory:

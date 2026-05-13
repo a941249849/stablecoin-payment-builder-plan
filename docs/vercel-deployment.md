@@ -11,8 +11,8 @@ Recommended Vercel settings:
 | Setting | Value |
 | --- | --- |
 | Framework Preset | Vite |
-| Install Command | `pnpm install --frozen-lockfile=false` |
-| Build Command | `pnpm --dir apps/tempo-stablepay build` |
+| Install Command | `npm install` |
+| Build Command | `npm --workspace apps/tempo-stablepay run build` |
 | Output Directory | `apps/tempo-stablepay/dist` |
 
 The repository root includes `vercel.json` with these values, so Vercel should detect them after import.
