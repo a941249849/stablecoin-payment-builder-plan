@@ -83,20 +83,18 @@ const copy = {
     noWallet: '未检测到浏览器钱包时，可先使用 Tempo Wallet 或打开官方领水页面填写地址。',
     wrongNetwork: '当前钱包不在 Tempo Testnet，请先切换网络。',
     balanceLoading: '读取中...',
-    walletConfirm: '已提交发送请求，请在钱包中确认交易。',
-    paymentSent: '交易已上链，等待 TransferWithMemo 事件对账。',
+    walletConfirm: '请在钱包中确认这笔测试网付款。',
+    paymentSent: '交易已提交，正在等待链上确认和 memo 对账。',
     paymentError: '发送失败',
-    policyError:
-      '发送失败：Tempo 的 TIP-20 转账会经过 TIP-403 授权检查。请确认收款地址不是零地址、优先使用当前钱包地址，并确认钱包已在 Tempo Testnet；如果仍返回 403，记录为测试网策略/RPC 拒绝证据。',
-    policyTitle: 'TIP-403 转账预检',
-    policyIdle: '连接钱包并填写收款地址后，会在发送前检查付款方和收款方是否允许转账。',
-    policyChecking: '正在读取当前稳定币的 transferPolicyId 与地址授权状态...',
-    policyAllowed: '预检通过：付款方和收款方均允许转账。',
-    policySenderBlocked: '付款钱包未通过该稳定币的 TIP-403 policy，不能发起这笔转账。',
-    policyRecipientBlocked: '收款地址未通过该稳定币的 TIP-403 policy，请换成已领水/已授权的钱包地址。',
-    policyUnavailable: '暂时无法读取 TIP-403 预检，请确认钱包在 Tempo Testnet 后重试。',
+    policyTitle: '付款资格检查',
+    policyIdle: '连接钱包并填写收款地址后，发送前会自动确认这笔测试网付款是否可以发起。',
+    policyChecking: '正在确认测试网付款权限...',
+    policyAllowed: '检查通过：当前付款钱包和收款地址可以发送测试币。',
+    policySenderBlocked: '当前钱包暂时不能发送这类测试币，请换用已领水的钱包重新连接。',
+    policyRecipientBlocked: '收款地址暂时不能接收这类测试币，请换成已领水的钱包地址。',
+    policyUnavailable: '暂时无法完成付款检查，请确认钱包已切换到 Tempo Testnet 后重试。',
     rpcSubmitError:
-      '链上 policy 预检与模拟调用已通过；这次 403 来自钱包/RPC 提交流程。请优先用 Tempo Wallet 或刷新网络后重试，仍失败则记录为当前测试网提交策略拒绝证据。',
+      '钱包没有完成这笔测试网交易。请确认已切换到 Tempo Testnet，并尝试使用 Tempo Wallet、OKX Wallet 或 MetaMask 重新连接后再发送。',
     policyId: 'Policy ID',
     switchSuccess: '已切换到 Tempo Testnet。',
     switchError: '网络切换失败，请在钱包中手动添加 Tempo Testnet。',
@@ -146,20 +144,18 @@ const copy = {
     noWallet: 'If no browser wallet is detected, use Tempo Wallet or open the official faucet page with an address.',
     wrongNetwork: 'The wallet is not on Tempo Testnet. Switch networks first.',
     balanceLoading: 'Loading...',
-    walletConfirm: 'Send request submitted. Confirm the transaction in your wallet.',
-    paymentSent: 'Transaction landed. Waiting for TransferWithMemo reconciliation.',
+    walletConfirm: 'Confirm this testnet payment in your wallet.',
+    paymentSent: 'Transaction submitted. Waiting for onchain confirmation and memo reconciliation.',
     paymentError: 'Send failed',
-    policyError:
-      'Send failed: Tempo TIP-20 transfers run through TIP-403 authorization checks. Use a valid non-zero recipient, prefer the connected wallet address, and confirm the wallet is on Tempo Testnet. If 403 persists, record it as testnet policy/RPC rejection evidence.',
-    policyTitle: 'TIP-403 transfer preflight',
-    policyIdle: 'Connect a wallet and enter a recipient to check whether sender and recipient can transfer before sending.',
-    policyChecking: 'Reading the stablecoin transferPolicyId and address authorization state...',
-    policyAllowed: 'Preflight passed: sender and recipient are both authorized.',
-    policySenderBlocked: 'The payer wallet is not authorized by this stablecoin TIP-403 policy.',
-    policyRecipientBlocked: 'The recipient is not authorized by this stablecoin TIP-403 policy. Use a funded or authorized wallet address.',
-    policyUnavailable: 'TIP-403 preflight is temporarily unavailable. Confirm Tempo Testnet and try again.',
+    policyTitle: 'Payment eligibility check',
+    policyIdle: 'Connect a wallet and enter a recipient. The app checks whether this testnet payment can be sent before opening the wallet.',
+    policyChecking: 'Checking testnet payment eligibility...',
+    policyAllowed: 'Check passed: this wallet and recipient can send test tokens.',
+    policySenderBlocked: 'This wallet cannot send this test token yet. Reconnect with a funded wallet.',
+    policyRecipientBlocked: 'This recipient cannot receive this test token yet. Use a funded wallet address.',
+    policyUnavailable: 'Payment check is temporarily unavailable. Confirm Tempo Testnet and try again.',
     rpcSubmitError:
-      'Onchain policy preflight and simulation passed; this 403 came from the wallet/RPC submission path. Prefer Tempo Wallet or refresh the network and retry. If it persists, record it as testnet submission policy rejection evidence.',
+      'The wallet did not complete this testnet transaction. Confirm Tempo Testnet, then reconnect with Tempo Wallet, OKX Wallet, or MetaMask and try again.',
     policyId: 'Policy ID',
     switchSuccess: 'Switched to Tempo Testnet.',
     switchError: 'Network switch failed. Add Tempo Testnet manually in the wallet.',
@@ -184,7 +180,7 @@ export function App() {
   const { connectors, connect, isPending: isConnecting } = useConnect()
   const { disconnect } = useDisconnect()
   const { switchChainAsync, isPending: isSwitching } = useSwitchChain()
-  const transfer = Hooks.token.useTransferSync()
+  const transfer = Hooks.token.useTransfer()
   const selectedPaymentToken = findStableToken(paymentTokenAddress)
 
   useEffect(() => {
@@ -367,13 +363,13 @@ export function App() {
       return
     }
     if (!preflight.senderAllowed) {
-      setActionState({ tone: 'error', text: `${t.policySenderBlocked} ${t.policyId}: ${preflight.policyId.toString()}` })
+      setActionState({ tone: 'error', text: t.policySenderBlocked })
       return
     }
     if (!preflight.recipientAllowed) {
       setActionState({
         tone: 'error',
-        text: `${t.policyRecipientBlocked} ${t.policyId}: ${preflight.policyId.toString()}`,
+        text: t.policyRecipientBlocked,
       })
       return
     }
@@ -389,14 +385,14 @@ export function App() {
         feeToken,
       },
       {
-        onSuccess: (result) => {
+        onSuccess: (hash) => {
           setInvoices((current) =>
             current.map((item) =>
               item.id === invoice.id
                 ? {
                     ...item,
                     status: 'pending',
-                    txHash: result.receipt.transactionHash,
+                    txHash: hash,
                   }
                 : item,
             ),
@@ -676,6 +672,7 @@ export function App() {
                   deleteLabel={t.delete}
                   receiptLabel={t.receipt}
                   sendLabel={t.send}
+                  switchLabel={t.switch}
                 />
               ))}
             </div>
@@ -703,11 +700,11 @@ function getPolicyState(
   const senderAllowed = authorization?.[0]?.status === 'success' ? Boolean(authorization[0].result) : undefined
   const recipientAllowed = authorization?.[1]?.status === 'success' ? Boolean(authorization[1].result) : undefined
   if (senderAllowed === undefined || recipientAllowed === undefined) {
-    return { tone: 'error' as const, text: `${t.policyUnavailable} ${t.policyId}: ${policyId.toString()}` }
+    return { tone: 'error' as const, text: t.policyUnavailable }
   }
-  if (!senderAllowed) return { tone: 'error' as const, text: `${t.policySenderBlocked} ${t.policyId}: ${policyId.toString()}` }
-  if (!recipientAllowed) return { tone: 'error' as const, text: `${t.policyRecipientBlocked} ${t.policyId}: ${policyId.toString()}` }
-  return { tone: 'success' as const, text: `${t.policyAllowed} ${t.policyId}: ${policyId.toString()}` }
+  if (!senderAllowed) return { tone: 'error' as const, text: t.policySenderBlocked }
+  if (!recipientAllowed) return { tone: 'error' as const, text: t.policyRecipientBlocked }
+  return { tone: 'success' as const, text: t.policyAllowed }
 }
 
 async function readPolicyPreflight(
@@ -761,6 +758,7 @@ function InvoiceRow({
   deleteLabel,
   receiptLabel,
   sendLabel,
+  switchLabel,
 }: {
   invoice: Invoice
   isActive: boolean
@@ -775,6 +773,7 @@ function InvoiceRow({
   deleteLabel: string
   receiptLabel: string
   sendLabel: string
+  switchLabel: string
 }) {
   const token = findStableToken(invoice.token)
   const invoiceRecipientIsValid = isUsableAddress(invoice.recipient)
@@ -811,7 +810,7 @@ function InvoiceRow({
             onSend()
           }}
         >
-          {isConnected && !isTempoNetwork ? 'Switch' : sendLabel}
+          {isConnected && !isTempoNetwork ? switchLabel : sendLabel}
         </button>
         {invoice.txHash ? (
           <a href={`${explorerBaseUrl}/tx/${invoice.txHash}`} target="_blank" rel="noreferrer">

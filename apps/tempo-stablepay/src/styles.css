@@ -303,7 +303,7 @@ h3 {
   box-shadow: 0 18px 40px rgba(23, 32, 27, 0.09);
   display: grid;
   gap: 8px;
-  min-width: 150px;
+  min-width: 0;
   padding: 14px;
   position: absolute;
   z-index: 2;
@@ -320,23 +320,23 @@ h3 {
 }
 
 .businessCard {
-  left: 3%;
-  min-width: 205px;
-  top: 23%;
+  left: 4%;
+  top: 35%;
+  width: 145px;
 }
 
 .walletCard {
-  left: 34%;
-  min-width: 150px;
-  top: 48%;
+  left: 31%;
+  top: 35%;
+  width: 145px;
 }
 
 .tempoCard {
   background: #070908;
   color: #fff;
-  left: 40%;
-  min-width: 190px;
-  top: 18%;
+  left: 54%;
+  top: 26%;
+  width: 145px;
 }
 
 .tempoCard strong {
@@ -344,37 +344,33 @@ h3 {
 }
 
 .ledgerCard {
-  right: 3%;
+  right: 4%;
   top: 35%;
+  width: 130px;
 }
 
 .rail {
-  background: #18201b;
-  height: 2px;
+  display: none;
+}
+
+.flowConnectors {
+  height: 100%;
+  inset: 0;
   position: absolute;
-  transform-origin: left center;
+  width: 100%;
   z-index: 1;
 }
 
-.railOne {
-  left: 28%;
-  top: 39%;
-  transform: rotate(15deg);
-  width: 14%;
+.flowConnectors path {
+  fill: none;
+  marker-end: url(#paymentArrow);
+  stroke: #70b694;
+  stroke-linecap: round;
+  stroke-width: 3;
 }
 
-.railTwo {
-  left: 58%;
-  top: 35%;
-  transform: rotate(6deg);
-  width: 18%;
-}
-
-.railThree {
-  left: 51%;
-  top: 60%;
-  transform: rotate(18deg);
-  width: 25%;
+.flowConnectors marker path {
+  fill: #70b694;
 }
 
 .memoChip {
@@ -383,16 +379,16 @@ h3 {
   color: #fff;
   font-size: 12px;
   font-weight: 800;
-  left: 54%;
+  left: 50%;
   padding: 7px 10px;
   position: absolute;
-  top: 57%;
+  top: 47%;
   z-index: 3;
 }
 
 .movingTx {
   align-items: center;
-  animation: canvasTx 4.5s ease-in-out infinite;
+  animation: canvasTx 5s ease-in-out infinite;
   background: #111612;
   border-radius: 999px;
   color: #7ff0aa;
@@ -401,9 +397,9 @@ h3 {
   font-weight: 900;
   height: 28px;
   justify-content: center;
-  left: 23%;
+  left: 29%;
   position: absolute;
-  top: 35%;
+  top: 42%;
   width: 28px;
   z-index: 4;
 }
@@ -835,6 +831,7 @@ h3 {
   }
 
   .rail,
+  .flowConnectors,
   .memoChip,
   .movingTx {
     display: none;
@@ -856,16 +853,16 @@ h3 {
   }
 
   50% {
-    transform: translate(230px, -42px);
+    transform: translate(190px, 70px);
   }
 
   82% {
-    transform: translate(510px, 8px);
+    transform: translate(405px, 6px);
     opacity: 1;
   }
 
   100% {
-    transform: translate(600px, 8px);
+    transform: translate(510px, 12px);
     opacity: 0;
   }
 }
