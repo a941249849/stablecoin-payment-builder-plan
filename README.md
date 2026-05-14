@@ -1,40 +1,100 @@
 # Tempo StablePay
 
-Tempo StablePay is an engineering workspace for building and validating a stablecoin payment workflow on Tempo Testnet.
+Tempo StablePay is a public testnet demo for invoice-style stablecoin payments on Tempo. It uses a TIP-20 memo transfer to connect a payment with a business invoice, then verifies the payment through the Tempo RPC receipt and `TransferWithMemo` event.
 
-The first demo focuses on a practical payment loop:
+Live demo: https://stablecoin-payment-builder-plan.vercel.app/
 
-1. Create a local invoice.
-2. Encode the invoice reference as a TIP-20 `bytes32` memo.
-3. Send a selected test stablecoin with `transferWithMemo`.
-4. Reconcile payment status from the `TransferWithMemo` event.
+Published write-up: https://x.com/LiuNengBoy/status/2054765398441197691
 
-This repository is used to keep the build reproducible through GitHub and Vercel. Broader market or protocol comparisons should be treated as separate research notes, not as the purpose of the app itself.
+![Tempo StablePay payment canvas](docs/assets/tempo-home-canvas.png)
 
-Start with:
+## What It Demonstrates
 
-- [Tempo Delivery Package](docs/tempo-delivery-package.md)
-- [Tempo X Long-Form Draft](docs/tempo-x-thread-draft.md)
-- [Tempo X Publish Pack](docs/tempo-x-publish-pack.md)
-- [Tempo Current State Review](docs/tempo-current-state.md)
-- [Tempo Build Gate](docs/tempo-build-gate.md)
-- [Vercel Deployment](docs/vercel-deployment.md)
-- [Tempo StablePay App](apps/tempo-stablepay/README.md)
-- [Seven-Day Build and Content Plan](docs/tempo-seven-day-plan.md)
-- [Planning Notes](docs/tempo-arc-builder-plan.md)
+Most wallet transfers answer one question: did tokens move from one address to another?
 
-Current phase status:
+StablePay tests a more payment-oriented loop:
 
-1. Tempo StablePay is built and deployed as an invoice-style payment demo.
-2. The working proof path is `invoice -> memo -> transferWithMemo -> RPC receipt -> TransferWithMemo match -> paid`.
-3. A successful Tempo Wallet transaction has been captured through the public RPC receipt and matched memo log.
-4. Tempo Explorer can still return `404` for the confirmed transaction hash, so Explorer is treated as a secondary indexing surface rather than the source of truth.
-5. The Tempo article draft and evidence package are ready for publication review.
-6. Arc work remains the next implementation-backed comparison phase after the Tempo article is published.
+```txt
+invoice -> memo -> transferWithMemo -> RPC receipt -> TransferWithMemo match -> paid
+```
 
-Public repo principles:
+The demo creates a local invoice, encodes the invoice reference as a `bytes32` memo, sends a selected Tempo test stablecoin, and reconciles the invoice from the matching `TransferWithMemo` event.
 
-- Keep protocol claims source-backed and date-aware.
-- Separate official facts from market expectations.
-- Build demos around real payment workflows rather than token speculation.
-- Avoid committing private keys, local artifacts, or internal working notes.
+## Features
+
+- Invoice creation with recipient, amount, payment token, fee token, and memo.
+- Payment-token options: `pathUSD`, `AlphaUSD`, `BetaUSD`, `ThetaUSD`.
+- Fee-token options: `pathUSD`, `AlphaUSD`.
+- Tempo Wallet primary send path.
+- Injected wallet connection path for wallets such as OKX Wallet and MetaMask where supported.
+- RPC receipt verification.
+- `TransferWithMemo` log matching.
+- Copyable payment proof bundle.
+- Bilingual interface in Chinese and English.
+
+## Payment Proof
+
+A successful Tempo Wallet transaction was verified through Tempo RPC:
+
+```txt
+tx hash: 0xbaa715f8795f3433292f7ad1ad1d7b41341a99c1e48e47232f4ce1931b6690d6
+rpc: https://rpc.moderato.tempo.xyz
+status: success
+block: 17395745
+token: AlphaUSD
+fee token: AlphaUSD
+memo: INV-MP4JBTHK
+TransferWithMemo log index: 6
+```
+
+Tempo Explorer can currently return `404` for this transaction route even when the RPC receipt confirms success. For this demo, the RPC receipt plus decoded `TransferWithMemo` log is treated as the primary proof source.
+
+![Tempo StablePay proof console](docs/assets/tempo-proof-console.png)
+
+## Tech Stack
+
+- Vite
+- React
+- TypeScript
+- Wagmi
+- Viem
+- `tempo.ts`
+- Vercel
+
+## Run Locally
+
+```sh
+npm install
+npm --workspace apps/tempo-stablepay run dev
+```
+
+Build:
+
+```sh
+npm --workspace apps/tempo-stablepay run build
+```
+
+## Repository Structure
+
+```txt
+apps/tempo-stablepay/   React demo app
+docs/                   Research notes, delivery package, article materials
+docs/assets/            Screenshots used for the public write-up
+vercel.json             Vercel build configuration
+```
+
+## Limitations
+
+- Testnet only.
+- Invoices are stored in browser local storage.
+- No backend database, webhook, or merchant ledger service yet.
+- Fee sponsorship is documented as a follow-up item until it is validated end to end.
+- Injected wallets may connect to Tempo Testnet but can still fail during Tempo stablecoin-fee transaction submission.
+- Explorer indexing should be treated as a secondary convenience surface until it consistently matches RPC receipts.
+
+## Further Reading
+
+- [Tempo delivery package](docs/tempo-delivery-package.md)
+- [Tempo current state review](docs/tempo-current-state.md)
+- [Build gate](docs/tempo-build-gate.md)
+- [Vercel deployment notes](docs/vercel-deployment.md)
