@@ -18,7 +18,7 @@ Status as of 2026-05-14:
 - Day 4 is complete: `TransferWithMemo` memo matching is implemented and represented in the payment proof console.
 - Day 5 is partially complete: transaction display is implemented; fee sponsorship is explicitly deferred until it is validated end to end.
 - Day 6 is complete: README, delivery package, transaction evidence, proof caveats, and article evidence notes are prepared.
-- Day 7 is ready for user publication review: the long-form X draft is in `docs/tempo-x-thread-draft.md`.
+- Day 7 is complete: the long-form X article was published at https://x.com/LiuNengBoy/status/2054765398441197691.
 
 ## Day 1: Tempo Latest State Research and Article Outline
 

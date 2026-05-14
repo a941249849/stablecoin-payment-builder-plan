@@ -21,6 +21,7 @@ StablePay is not a generic transfer UI. The demo validates an invoice-style paym
 
 - Demo: https://stablecoin-payment-builder-plan.vercel.app/
 - Repo: https://github.com/a941249849/stablecoin-payment-builder-plan
+- Published X article: https://x.com/LiuNengBoy/status/2054765398441197691
 - App source: `apps/tempo-stablepay`
 - Main proof UI: payment proof console above the payment list.
 

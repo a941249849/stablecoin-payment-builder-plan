@@ -15,6 +15,7 @@ Start with:
 
 - [Tempo Delivery Package](docs/tempo-delivery-package.md)
 - [Tempo X Long-Form Draft](docs/tempo-x-thread-draft.md)
+- [Tempo X Publish Pack](docs/tempo-x-publish-pack.md)
 - [Tempo Current State Review](docs/tempo-current-state.md)
 - [Tempo Build Gate](docs/tempo-build-gate.md)
 - [Vercel Deployment](docs/vercel-deployment.md)
