@@ -48,3 +48,8 @@ apps/tempo-stablepay/dist
 - Fee sponsorship is not enabled until a live sponsored transaction is validated.
 - Tempo Wallet is the preferred send path. Injected wallets may connect or add Tempo Testnet, but transaction submission can still fail if the wallet/RPC path does not support Tempo stablecoin-fee transactions.
 - Explorer transaction links use `https://explore.tempo.xyz/tx/{transactionHash}`. The app also stores block-number proof because Tempo Explorer can lag or fail to render individual WebAuthn wallet transactions even when RPC receipts are available.
+
+## Evidence Package
+
+- Delivery package: `../../docs/tempo-delivery-package.md`
+- X long-form draft: `../../docs/tempo-x-thread-draft.md`

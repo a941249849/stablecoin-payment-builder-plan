@@ -37,14 +37,17 @@ The demo must not be AlphaUSD-only. It should treat `pathUSD`, `AlphaUSD`, `Beta
 
 Wallet connection and transaction submission must be tracked separately. Tempo Wallet is the preferred browser send path. Injected wallets such as MetaMask or OKX can be useful for connection and network-add testing, but failures during `eth_sendTransaction` / `wallet_sendTransaction` should be documented as compatibility evidence rather than hidden behind generic policy errors.
 
-The current demo is still in Day 2/Day 3 territory until these are verified:
+As of 2026-05-14, the demo has moved from early build validation into a delivery-candidate Tempo artifact. The following pieces have been verified in the app and documented in the delivery package:
 
-- Selected payment-token balance changes immediately when the selector changes.
-- Invoice creation stores the selected token.
-- Send action gives wallet, network, success, and error feedback.
-- Network switch either succeeds through the wallet or shows a manual add-network fallback.
-- A real `transferWithMemo` tx hash is captured.
-- `TransferWithMemo` event detection marks the invoice as paid.
+- Selected payment-token state is stored with the invoice.
+- Tempo Wallet can submit a `transferWithMemo` transaction on Tempo Testnet.
+- A real transaction hash is captured from the wallet send flow.
+- Tempo RPC returns a successful receipt for the transaction.
+- The app decodes and matches the `TransferWithMemo` log by token, recipient, and memo.
+- The invoice can be marked paid from the matched memo event.
+- The payment proof console exposes a copyable proof bundle with tx hash, block, block hash, from/to, token, fee token, memo, matched log index, and reconciliation status.
+
+Known limitation: the Tempo Explorer transaction route can return `404` for the same transaction hash even when the public RPC receipt confirms success. The current proof standard therefore treats RPC receipt plus decoded `TransferWithMemo` as primary evidence, and Explorer as a secondary convenience surface.
 
 ## Sources
 

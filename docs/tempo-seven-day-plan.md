@@ -1,12 +1,24 @@
 # Tempo Seven-Day Build and Content Plan
 
-Last updated: 2026-05-13
+Last updated: 2026-05-14
 
 This plan connects the previous Tempo testnet article with a second-phase build: update Tempo's current state, build a reproducible StablePay demo, collect live transaction evidence, and publish a long-form X thread.
 
 Arc research and demo work belongs to the next phase after the Tempo build has a clear public artifact and article.
 
 The plan should be judged by evidence, not by narrative momentum. Tempo-first is useful because the existing article and testnet experience create a builder advantage. Arc becomes useful once there is an equivalent artifact to compare against, especially while market attention is being pulled toward Arc token expectations.
+
+## Current Completion Snapshot
+
+Status as of 2026-05-14:
+
+- Day 1 is complete: current-state review and official-source assumptions are documented.
+- Day 2 is complete: the StablePay frontend, bilingual UI, wallet entry points, invoice flow, and four payment-token options are implemented.
+- Day 3 is complete for the Tempo Wallet path: a real `transferWithMemo` transaction hash was captured and verified through Tempo RPC.
+- Day 4 is complete: `TransferWithMemo` memo matching is implemented and represented in the payment proof console.
+- Day 5 is partially complete: transaction display is implemented; fee sponsorship is explicitly deferred until it is validated end to end.
+- Day 6 is complete: README, delivery package, transaction evidence, proof caveats, and article evidence notes are prepared.
+- Day 7 is ready for user publication review: the long-form X draft is in `docs/tempo-x-thread-draft.md`.
 
 ## Day 1: Tempo Latest State Research and Article Outline
 
@@ -95,9 +107,9 @@ Goals:
 Outputs:
 
 - Final README.
-- Screenshots.
+- Screenshot checklist.
 - Tx hash list.
-- Article evidence pack.
+- Article evidence pack in `docs/tempo-delivery-package.md`.
 
 ## Day 7: Publish X Long-Form Article
 
@@ -113,6 +125,10 @@ Outputs:
 - X long-form post.
 - GitHub issue/comment with publication link.
 - Backlog for Arc comparison and demo.
+
+Draft source:
+
+- `docs/tempo-x-thread-draft.md`
 
 ## Next Phase: Arc Comparison Track
 

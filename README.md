@@ -13,6 +13,8 @@ This repository is used to keep the build reproducible through GitHub and Vercel
 
 Start with:
 
+- [Tempo Delivery Package](docs/tempo-delivery-package.md)
+- [Tempo X Long-Form Draft](docs/tempo-x-thread-draft.md)
 - [Tempo Current State Review](docs/tempo-current-state.md)
 - [Tempo Build Gate](docs/tempo-build-gate.md)
 - [Vercel Deployment](docs/vercel-deployment.md)
@@ -20,14 +22,14 @@ Start with:
 - [Seven-Day Build and Content Plan](docs/tempo-seven-day-plan.md)
 - [Planning Notes](docs/tempo-arc-builder-plan.md)
 
-Current engineering focus:
+Current phase status:
 
-1. Keep the Vercel deployment green.
-2. Validate wallet connection across Tempo Wallet, OKX Wallet, and MetaMask where available, while separating connection support from actual Tempo transaction submission support.
-3. Validate faucet funding on Tempo Testnet.
-4. Send a self-paid memo transfer with pathUSD, AlphaUSD, BetaUSD, or ThetaUSD.
-5. Confirm `TransferWithMemo` reconciliation from the live transaction.
-6. Keep Arc work as the next implementation-backed comparison phase after the Tempo demo and article are published.
+1. Tempo StablePay is built and deployed as an invoice-style payment demo.
+2. The working proof path is `invoice -> memo -> transferWithMemo -> RPC receipt -> TransferWithMemo match -> paid`.
+3. A successful Tempo Wallet transaction has been captured through the public RPC receipt and matched memo log.
+4. Tempo Explorer can still return `404` for the confirmed transaction hash, so Explorer is treated as a secondary indexing surface rather than the source of truth.
+5. The Tempo article draft and evidence package are ready for publication review.
+6. Arc work remains the next implementation-backed comparison phase after the Tempo article is published.
 
 Public repo principles:
 
